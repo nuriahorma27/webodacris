@@ -102,7 +102,7 @@
       </section>
 
       <section class="rsvp section" id="formulario">
-        <figure class="rsvp-photo rsvp-logo reveal"><img src="assets/logo-cp.png" alt="Monograma de Cris y Pela" /></figure>
+        <figure class="rsvp-photo rsvp-logo"><img src="assets/logo-cp.png" alt="Monograma de Cris y Pela" /></figure>
         <div class="rsvp-copy reveal">
           <p class="eyebrow">¿Nos acompañas?</p>
           <h2>Confirma tu asistencia</h2>
@@ -144,11 +144,15 @@
               <div class="bus-questions">
                 <div>
                   <fieldset><legend>¿Necesitas bus de ida?</legend><label><input type="radio" name="bus-ida" value="Sí" required /> Sí</label><label><input type="radio" name="bus-ida" value="No" required /> No</label></fieldset>
-                  <fieldset class="conditional bus-location" id="bus-ida-location" hidden><legend>¿Desde dónde?</legend><label><input type="radio" name="bus-ida-origen" value="Gijón" /> Gijón</label><label><input type="radio" name="bus-ida-origen" value="Oviedo" /> Oviedo</label></fieldset>
+                  <fieldset class="conditional bus-location" id="bus-ida-location" hidden>
+                    <legend>¿Desde dónde necesitas el autobús?</legend>
+                    <label><input type="radio" name="bus-ida-origen" value="Gijón" /> Gijón</label><label><input type="radio" name="bus-ida-origen" value="Oviedo" /> Oviedo</label>
+                    <div class="bus-location-info"><p><strong>Desde Oviedo:</strong> traslado a la iglesia y, después de la ceremonia, a la celebración.</p><p><strong>Desde Gijón:</strong> traslado directo a la celebración.</p></div>
+                  </fieldset>
                 </div>
                 <div>
                   <fieldset><legend>¿Necesitas bus de vuelta?</legend><label><input type="radio" name="bus-vuelta" value="Sí" required /> Sí</label><label><input type="radio" name="bus-vuelta" value="No" required /> No</label></fieldset>
-                  <fieldset class="conditional bus-location" id="bus-vuelta-location" hidden><legend>¿Hasta dónde?</legend><label><input type="radio" name="bus-vuelta-destino" value="Gijón" /> Gijón</label><label><input type="radio" name="bus-vuelta-destino" value="Oviedo" /> Oviedo</label></fieldset>
+                  <fieldset class="conditional bus-location" id="bus-vuelta-location" hidden><legend>¿Dónde quieres bajarte?</legend><label><input type="radio" name="bus-vuelta-destino" value="Gijón" /> Gijón</label><label><input type="radio" name="bus-vuelta-destino" value="Oviedo" /> Oviedo</label></fieldset>
                 </div>
               </div>
               <div class="step-actions"><button class="form-back" type="button">Volver</button><button class="form-submit" type="submit">Enviar confirmación</button></div>
