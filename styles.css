@@ -225,3 +225,18 @@ body:before{display:none}
 .wedding-list p:not(.eyebrow){max-width:520px;margin:0 auto 28px;font-size:14px}
 .list-coming{display:inline-block;border-top:1px solid rgba(101,112,82,.35);padding-top:16px}
 @media(max-width:760px){.transport{grid-template-columns:1fr;gap:45px}.transport-copy h2,.wedding-list h2{font-size:62px}.transport-times article{padding:23px 0}.rsvp h2{font-size:47px}}
+
+/* Guía dividida: comer y alojarse */
+.city-guide{display:grid;grid-template-columns:1fr 1fr;min-height:100svh}
+.guide-half{position:relative;display:grid;grid-template-columns:45px 1fr;align-items:end;padding:clamp(55px,7vw,110px);color:var(--invite-paper);text-decoration:none;overflow:hidden;transition:filter .3s}
+.guide-half:hover{filter:brightness(1.05)}
+.guide-food{background-color:#31483a;background-image:var(--paper-texture);background-blend-mode:multiply}
+.guide-stay{background-color:var(--invite-paper);background-image:var(--paper-texture);color:var(--invite-green)}
+.guide-number{align-self:start;font-family:"Cormorant Garamond",Georgia,serif;font-size:16px;font-style:italic;opacity:.72}
+.guide-half>div{align-self:end}
+.guide-half .eyebrow{margin-bottom:20px;opacity:.7}
+.guide-half h2{font-family:"Cormorant Garamond",Georgia,serif;font-size:clamp(60px,8vw,112px);font-weight:400;line-height:.72;letter-spacing:-.04em;margin:0 0 38px;color:inherit}
+.guide-half h2 br{display:block}
+.guide-half div>p:not(.eyebrow){max-width:360px;font-size:13px;line-height:1.7;margin-bottom:28px}
+.guide-link{text-transform:uppercase;letter-spacing:.16em;font-size:9px;border-bottom:1px solid currentColor;padding-bottom:5px}
+@media(max-width:680px){.city-guide{grid-template-columns:1fr;min-height:100svh}.guide-half{min-height:50svh;padding:40px 28px;grid-template-columns:30px 1fr}.guide-half h2{font-size:57px;line-height:.8;margin-bottom:20px}.guide-half div>p:not(.eyebrow){margin-bottom:15px}.guide-half .eyebrow{margin-bottom:10px}}
