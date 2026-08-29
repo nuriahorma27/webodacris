@@ -235,9 +235,11 @@ body.modal-open{overflow:hidden}
 /* Adaptación móvil: imágenes contenidas y composiciones sin desbordamiento */
 html,body{max-width:100%;overflow-x:hidden}
 @media(max-width:760px){
+  :root{--texture:url("assets/papel-acuarela-mobile.jpg")}
   .section{min-height:auto;padding:58px 22px}
   .hero{min-height:100svh;padding:82px 18px 38px}
   .hero-copy{width:100%}
+  .hero-copy>picture{display:block;width:100%}
   .hero-venue{width:min(92vw,470px);height:min(31svh,270px);margin-bottom:12px}
   .hero h1{font-size:clamp(58px,20vw,76px)}
   .hero-date{margin:15px 0;font-size:18px}
@@ -248,6 +250,7 @@ html,body{max-width:100%;overflow-x:hidden}
   .event-row:last-child .event-image{grid-column:1;grid-row:1}
   .event-row:last-child .event-copy{grid-column:1;grid-row:2;text-align:center}
   .event-image{width:100%;height:clamp(165px,27svh,220px);margin:0 auto;overflow:hidden}
+  .event-image picture{display:block;width:100%;height:100%}
   .event-image img{object-position:center}
   .event-image.church img{transform:scale(.84)}
   .event-image.venue img{transform:scale(.88)}
@@ -274,6 +277,7 @@ html,body{max-width:100%;overflow-x:hidden}
   .transport-copy h2{font-size:55px}
   .bus-stop{min-height:175px;padding:25px 23px}
   .bus-line{height:82px}
+  .bus-line picture{display:block}
   .bus-line img{width:112px;margin:-8px 0}
 
   .rsvp{padding:58px 22px;gap:18px}

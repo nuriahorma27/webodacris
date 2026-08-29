@@ -9,12 +9,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&family=Italianno&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=save-the-date-20" />
+    <link rel="stylesheet" href="styles.css?v=save-the-date-21" />
   </head>
   <body>
     <div class="grain" aria-hidden="true"></div>
     <header class="site-header">
-      <a class="monogram logo-mark" href="#inicio" aria-label="Volver al inicio"><img src="assets/logo-cp.png" alt="Cris y Pela" /></a>
+      <a class="monogram logo-mark" href="#inicio" aria-label="Volver al inicio"><img src="assets/logo-cp-display.jpg" alt="Cris y Pela" /></a>
       <button class="menu-button" type="button" aria-expanded="false" aria-controls="main-nav">
         <span></span><span></span><span></span><span class="sr-only">Abrir menú</span>
       </button>
@@ -31,7 +31,7 @@
     <main>
       <section class="hero" id="inicio">
         <div class="hero-copy reveal">
-          <img class="hero-venue" src="assets/quinta-acuarela.png" alt="Acuarela de La Quinta del Ynfanzón" />
+          <picture><source media="(max-width: 760px)" srcset="assets/quinta-acuarela-mobile.png" /><img class="hero-venue" src="assets/quinta-acuarela.png" alt="Acuarela de La Quinta del Ynfanzón" /></picture>
           <h1>Cris <span>&</span> Pela</h1>
           <p class="hero-date">Sábado, 24 de julio de 2027</p>
           <div class="hero-places">
@@ -44,7 +44,7 @@
 
       <section class="event section" id="itinerario">
         <article class="event-row reveal">
-          <div class="event-image church"><img src="assets/iglesia-acuarela.png" alt="Acuarela de la iglesia de San Julián de Somió" /></div>
+          <div class="event-image church"><picture><source media="(max-width: 760px)" srcset="assets/iglesia-acuarela-mobile.png" /><img src="assets/iglesia-acuarela.png" alt="Acuarela de la iglesia de San Julián de Somió" /></picture></div>
           <div class="event-copy">
             <header><span>01.</span><h2>Ceremonia</h2></header>
             <p>Sábado · 13:00 h</p>
@@ -52,7 +52,7 @@
           </div>
         </article>
         <article class="event-row reveal">
-          <div class="event-image venue"><img src="assets/quinta-acuarela.png" alt="Acuarela de La Quinta del Ynfanzón" /></div>
+          <div class="event-image venue"><picture><source media="(max-width: 760px)" srcset="assets/quinta-acuarela-mobile.png" /><img src="assets/quinta-acuarela.png" alt="Acuarela de La Quinta del Ynfanzón" /></picture></div>
           <div class="event-copy">
             <header><span>02.</span><h2>Celebración</h2></header>
             <p>Sábado · Después de la ceremonia</p>
@@ -92,7 +92,7 @@
           </article>
           <div class="bus-line" aria-hidden="true">
             <i></i>
-            <img src="assets/bus-acuarela.png" alt="" />
+            <picture><source media="(max-width: 760px)" srcset="assets/bus-acuarela-mobile.png" /><img src="assets/bus-acuarela.png" alt="" /></picture>
             <i></i>
           </div>
           <article class="bus-stop">
@@ -102,7 +102,7 @@
       </section>
 
       <section class="rsvp section" id="formulario">
-        <figure class="rsvp-photo rsvp-logo"><img src="assets/logo-cp.png" alt="Monograma de Cris y Pela" /></figure>
+        <figure class="rsvp-photo rsvp-logo"><img src="assets/logo-cp-display.jpg" alt="Monograma de Cris y Pela" /></figure>
         <div class="rsvp-copy reveal">
           <p class="eyebrow">¿Nos acompañas?</p>
           <h2>Confirma tu asistencia</h2>
@@ -175,7 +175,7 @@
       <a class="footer-logo" href="#inicio" aria-label="Volver al inicio">
         <svg viewBox="0 0 1024 1536" role="img" aria-label="Cris y Pela">
           <defs><filter id="white-monogram"><feColorMatrix type="matrix" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 -.34 -.34 -.34 .95 0" /><feComponentTransfer><feFuncA type="gamma" amplitude="1" exponent="1.35" offset="0" /></feComponentTransfer></filter></defs>
-          <image href="assets/logo-cp.png" width="1024" height="1536" filter="url(#white-monogram)" />
+          <image href="assets/logo-cp-display.jpg" width="1024" height="1536" filter="url(#white-monogram)" />
         </svg>
       </a>
       <a href="#inicio">Volver arriba ↑</a>
