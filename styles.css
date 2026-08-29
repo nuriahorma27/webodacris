@@ -159,7 +159,7 @@ html{scroll-padding-top:76px}
 .rsvp-photo img{width:100%;height:100%;object-fit:cover;object-position:center 34%;filter:none}
 .rsvp-logo{width:min(100%,430px);height:min(66vh,600px);margin-inline:auto;overflow:hidden;filter:none;mask-image:none;-webkit-mask-image:none}
 .rsvp-logo:after{display:none}
-.rsvp-logo img{width:100%;height:100%;object-fit:contain;object-position:center;mix-blend-mode:multiply;filter:saturate(.9) contrast(1.08);transform:scale(1.22);transform-origin:center}
+.rsvp-logo svg{display:block;width:100%;height:100%;transform:scale(1.22);transform-origin:center}
 .rsvp-copy{max-width:620px!important;margin:0!important;text-align:left}
 .rsvp-copy p{margin-left:0;margin-right:0}
 @media(max-width:760px){.rsvp{grid-template-columns:1fr;gap:20px;padding:65px 24px;text-align:center}.rsvp-photo{width:min(420px,100%);height:43vh;margin:0 auto}.rsvp-copy{margin:0 auto!important;text-align:center}.rsvp-copy p{margin-left:auto;margin-right:auto}}
@@ -264,7 +264,7 @@ html,body{max-width:100%;overflow-x:hidden}
   .guide-menu h2{margin:0 0 20px;font-size:36px;line-height:1}
   .guide-menu h2 br{display:none}
   .guide-menu nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;border:0}
-  .guide-menu button,.guide-menu button:first-child{min-height:48px;justify-content:center;align-items:center;gap:0;padding:8px 4px;border:1px solid rgba(63,81,66,.25);color:#536048;background:rgba(255,252,244,.3);font-size:15px;line-height:1;opacity:.68;text-align:center}
+  .guide-menu button,.guide-menu button:first-child{min-height:52px;justify-content:center;align-items:center;gap:0;padding:8px 3px;border:1px solid rgba(63,81,66,.25);color:#536048;background:rgba(255,252,244,.3);font-size:21px;line-height:1;opacity:.68;text-align:center}
   .guide-menu button span{display:none}
   .guide-menu button.active{padding:8px 4px;border-color:var(--green);color:var(--paper);background:var(--green);opacity:1}
   .guide-menu button.active:before{display:none}
@@ -304,7 +304,7 @@ html,body{max-width:100%;overflow-x:hidden}
   .guide-menu{padding-inline:14px}
   .guide-menu h2{font-size:32px}
   .guide-menu nav{gap:5px}
-  .guide-menu button,.guide-menu button:first-child,.guide-menu button.active{min-height:44px;padding:7px 2px;font-size:13px}
+  .guide-menu button,.guide-menu button:first-child,.guide-menu button.active{min-height:50px;padding:7px 1px;font-size:19px}
   .form-progress span{font-size:11px}
   .form-progress span.active{font-size:12px}
   .step-actions{gap:10px}
