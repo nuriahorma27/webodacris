@@ -65,3 +65,20 @@
 .guide-card address a{font-weight:500;text-underline-offset:3px}
 .carousel-hint{margin-top:0}
 @media(max-width:720px){.city-guide{min-height:auto}.guide-menu{padding-top:30px;padding-bottom:30px}.guide-menu h2{font-size:42px}.guide-carousel-wrap{min-height:auto;padding-top:30px;padding-bottom:30px}.guide-card{flex-basis:min(315px,82vw);min-height:280px}.guide-card address{font-size:12px}}
+
+/* Controles del carrusel */
+.carousel-controls{gap:10px}
+.carousel-controls button{width:44px;height:44px;display:grid;place-items:center;padding:0;border:1px solid var(--green);border-radius:50%;color:var(--paper);background:var(--green);box-shadow:0 3px 10px rgba(63,81,66,.13);transition:transform .2s ease,background-color .2s ease,color .2s ease}
+.carousel-controls button span{display:block;font:400 32px/1 "Cormorant Garamond",Georgia,serif;transform:translateY(-2px)}
+.carousel-controls button:hover{color:var(--green);background:var(--paper);transform:translateY(-2px)}
+.carousel-controls button:active{transform:translateY(0) scale(.95)}
+.carousel-controls button:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+@media(max-width:720px){.carousel-controls button{width:40px;height:40px}.carousel-controls button span{font-size:29px}}
+
+/* Tarjetas en verde oliva */
+.guide-card{color:#fbf5e7;background:#6c795f;border-color:#5d6b53;box-shadow:0 7px 18px rgba(52,67,52,.14)}
+.guide-card:nth-child(even){background:#788469}
+.guide-card:nth-child(3n){background:#627158}
+.guide-card .place-tag{color:#f4ecd9;border-color:rgba(251,245,231,.42)}
+.guide-card h4,.guide-card>p,.guide-card address,.guide-card a{color:#fbf5e7}
+.guide-card address{border-color:rgba(251,245,231,.35)}
