@@ -241,7 +241,7 @@ html,body{max-width:100%;overflow-x:hidden}
   .hero{min-height:100svh;padding:82px 18px 38px}
   .hero-copy{width:100%}
   .hero-copy>picture{display:block;width:100%}
-  .hero-venue{width:min(92vw,470px);height:min(31svh,270px);margin-bottom:12px}
+  .hero-venue{width:min(92vw,470px);height:min(31svh,270px);margin-bottom:28px}
   .hero h1{font-size:clamp(58px,20vw,76px)}
   .hero-date{margin:15px 0;font-size:18px}
   .hero-places{width:100%;max-width:420px}
