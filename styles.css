@@ -22,3 +22,7 @@
 .event-copy>p,.event-copy>a,.guide-card address,.hero-date,.hero-places p{font-family:"Cormorant Garamond",Georgia,serif;color:var(--green)}
 .city-guide:before,.city-guide:after{color:var(--gold)}
 @media(max-width:760px){.hero,.event,.transport,.rsvp,.wedding-list{border-width:12px}.guide-menu h2{font-size:65px}.event-copy h2{font-size:56px}.transport h2,.rsvp h2,.wedding-list h2{font-size:76px}}
+
+/* Caligrafía fina, sin cenefas */
+.hero,.event,.transport,.rsvp,.wedding-list{border:0;border-image:none}
+.hero h1,.event-copy h2,.guide-menu h2,.guide-carousel-heading h3,.transport h2,.rsvp h2,.wedding-list h2,.guide-card h4,.transport-times h3{font-family:"Italianno",cursive;font-style:normal;font-weight:400}
