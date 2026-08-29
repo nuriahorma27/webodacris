@@ -26,3 +26,4 @@
 /* Caligrafía fina, sin cenefas */
 .hero,.event,.transport,.rsvp,.wedding-list{border:0;border-image:none}
 .hero h1,.event-copy h2,.guide-menu h2,.guide-carousel-heading h3,.transport h2,.rsvp h2,.wedding-list h2,.guide-card h4,.transport-times h3{font-family:"Italianno",cursive;font-style:normal;font-weight:400}
+.city-guide:before,.city-guide:after{display:none;content:none}
