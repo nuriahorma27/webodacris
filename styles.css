@@ -157,6 +157,9 @@ html{scroll-padding-top:76px}
 .rsvp-photo{width:100%;height:min(70vh,680px);margin:0;position:relative;overflow:hidden;filter:saturate(.58) sepia(.08);mask-image:linear-gradient(to right,transparent 0,#000 12%,#000 78%,transparent 100%),linear-gradient(to bottom,transparent 0,#000 10%,#000 88%,transparent 100%);mask-composite:intersect;-webkit-mask-image:linear-gradient(to right,transparent 0,#000 12%,#000 78%,transparent 100%),linear-gradient(to bottom,transparent 0,#000 10%,#000 88%,transparent 100%);-webkit-mask-composite:source-in}
 .rsvp-photo:after{content:"";position:absolute;inset:-10px;background:rgba(246,239,223,.06);pointer-events:none}
 .rsvp-photo img{width:100%;height:100%;object-fit:cover;object-position:center 34%;filter:none}
+.rsvp-logo{width:min(100%,430px);height:min(66vh,600px);margin-inline:auto;overflow:hidden;filter:none;mask-image:none;-webkit-mask-image:none}
+.rsvp-logo:after{display:none}
+.rsvp-logo img{width:100%;height:100%;object-fit:contain;object-position:center;mix-blend-mode:multiply;filter:saturate(.9) contrast(1.08)}
 .rsvp-copy{max-width:620px!important;margin:0!important;text-align:left}
 .rsvp-copy p{margin-left:0;margin-right:0}
 @media(max-width:760px){.rsvp{grid-template-columns:1fr;gap:20px;padding:65px 24px;text-align:center}.rsvp-photo{width:min(420px,100%);height:43vh;margin:0 auto}.rsvp-copy{margin:0 auto!important;text-align:center}.rsvp-copy p{margin-left:auto;margin-right:auto}}
@@ -187,6 +190,7 @@ body.modal-open{overflow:hidden}
 .wedding-form fieldset label:has(input:focus-visible){outline:2px solid #849070;outline-offset:3px}
 .conditional[hidden]{display:none}
 .bus-questions{display:grid;grid-template-columns:1fr 1fr;gap:25px}
+.bus-location{margin-top:4px!important;padding:15px 0 2px!important;border-top:1px solid var(--line)!important}
 .form-submit{padding:12px 28px;border:1px solid var(--green);border-radius:2px;color:var(--paper);background:var(--green);box-shadow:0 5px 14px rgba(49,71,55,.13);font:500 17px "Cormorant Garamond",Georgia,serif;letter-spacing:.025em;cursor:pointer;transition:transform .2s,box-shadow .2s,background .2s}
 .form-submit:hover{background:#3b5441;box-shadow:0 7px 18px rgba(49,71,55,.18);transform:translateY(-1px)}
 @media(max-width:760px){.wedding-form{text-align:left}.name-fields,.bus-questions{grid-template-columns:1fr;gap:0}.rsvp{padding-top:70px;padding-bottom:70px}.form-modal-inner{padding:55px 24px 28px}}
@@ -223,3 +227,84 @@ body.modal-open{overflow:hidden}
 .event-copy h2{font-size:clamp(43px,4.3vw,60px);line-height:.95}
 .transport-copy h2,.rsvp h2,.wedding-list h2{font-size:clamp(58px,6vw,82px);line-height:.9}
 .bus-stop h3,.guide-card h4,.transport-times h3{font-family:"Cormorant Garamond",Georgia,serif;font-style:italic;font-weight:500}
+
+/* Adaptación móvil: imágenes contenidas y composiciones sin desbordamiento */
+html,body{max-width:100%;overflow-x:hidden}
+@media(max-width:760px){
+  .section{min-height:auto;padding:58px 22px}
+  .hero{min-height:100svh;padding:82px 18px 38px}
+  .hero-copy{width:100%}
+  .hero-venue{width:min(92vw,470px);height:min(31svh,270px);margin-bottom:12px}
+  .hero h1{font-size:clamp(58px,20vw,76px)}
+  .hero-date{margin:15px 0;font-size:18px}
+  .hero-places{width:100%;max-width:420px}
+
+  .event{gap:42px;padding-top:65px;padding-bottom:65px}
+  .event-row{width:min(100%,430px);gap:8px;text-align:center}
+  .event-row:last-child .event-image{grid-column:1;grid-row:1}
+  .event-row:last-child .event-copy{grid-column:1;grid-row:2;text-align:center}
+  .event-image{width:100%;height:clamp(165px,27svh,220px);margin:0 auto;overflow:hidden}
+  .event-image img{object-position:center}
+  .event-image.church img{transform:scale(.84)}
+  .event-image.venue img{transform:scale(.88)}
+  .event-copy{padding:0 12px}
+  .event-copy header,.event-row:last-child .event-copy header{justify-content:center;margin-bottom:8px}
+  .event-copy h2{font-size:46px}
+  .event-copy>p,.event-copy>a{font-size:17px}
+
+  .guide-menu{display:block;padding:32px 18px 18px;border-bottom:0}
+  .guide-menu .eyebrow{margin-bottom:5px;font-size:13px}
+  .guide-menu h2{margin:0 0 20px;font-size:36px;line-height:1}
+  .guide-menu h2 br{display:none}
+  .guide-menu nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;border:0}
+  .guide-menu button,.guide-menu button:first-child{min-height:48px;justify-content:center;align-items:center;gap:0;padding:8px 4px;border:1px solid rgba(63,81,66,.25);color:#536048;background:rgba(255,252,244,.3);font-size:15px;line-height:1;opacity:.68;text-align:center}
+  .guide-menu button span{display:none}
+  .guide-menu button.active{padding:8px 4px;border-color:var(--green);color:var(--paper);background:var(--green);opacity:1}
+  .guide-menu button.active:before{display:none}
+  .guide-carousel-wrap{padding:27px 0 34px 18px}
+  .guide-carousel-heading{padding-right:18px}
+  .guide-carousel-heading h3{font-size:34px}
+  .guide-card{flex-basis:min(286px,78vw);min-height:260px;padding:22px 20px}
+
+  .transport{min-height:auto;gap:28px;padding:62px 22px}
+  .transport-copy h2{font-size:55px}
+  .bus-stop{min-height:175px;padding:25px 23px}
+  .bus-line{height:82px}
+  .bus-line img{width:112px;margin:-8px 0}
+
+  .rsvp{padding:58px 22px;gap:18px}
+  .rsvp-photo{width:min(78vw,330px);height:min(38svh,330px)}
+  .rsvp-logo{width:min(68vw,285px);height:min(43svh,365px)}
+  .rsvp h2{font-size:49px;line-height:.92}
+  .wedding-list{padding-top:70px;padding-bottom:70px}
+  .wedding-list h2{font-size:55px}
+
+  .form-modal{width:calc(100vw - 20px);max-height:calc(100dvh - 20px);overflow-y:auto}
+  .form-modal-inner{padding:50px 20px 25px}
+  .form-modal h2{font-size:40px}
+  .form-step{min-height:0}
+  .site-header nav{height:100dvh;overflow-y:auto}
+}
+
+@media(max-width:420px){
+  .hero-venue{height:min(28svh,225px)}
+  .hero-places p{font-size:14px}
+  .event{gap:34px;padding-top:54px;padding-bottom:54px}
+  .event-image{height:175px}
+  .rsvp-photo{width:min(82vw,300px);height:285px}
+  .rsvp-logo{width:min(66vw,255px);height:330px}
+  .guide-menu{padding-inline:14px}
+  .guide-menu h2{font-size:32px}
+  .guide-menu nav{gap:5px}
+  .guide-menu button,.guide-menu button:first-child,.guide-menu button.active{min-height:44px;padding:7px 2px;font-size:13px}
+  .form-progress span{font-size:11px}
+  .form-progress span.active{font-size:12px}
+  .step-actions{gap:10px}
+  .form-next,.form-submit{min-width:0;padding:10px 18px;font-size:16px}
+}
+
+@media(max-width:760px) and (orientation:landscape){
+  .hero-venue{height:31vh;max-width:430px}
+  .event-image{height:45vh}
+  .rsvp-photo{height:58vh;max-height:300px}
+}

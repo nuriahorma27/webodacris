@@ -120,6 +120,20 @@ document.querySelectorAll('.form-back').forEach(button=>button.addEventListener(
   showFormStep(Math.max(currentStep-1,0));
 }));
 
+function configureBusLocation(choiceName,locationId){
+  const location=document.querySelector(`#${locationId}`);
+  document.querySelectorAll(`input[name="${choiceName}"]`).forEach(input=>input.addEventListener('change',()=>{
+    const needsBus=input.value==='Sí';
+    location.hidden=!needsBus;
+    location.querySelectorAll('input').forEach(field=>{
+      field.required=needsBus;
+      if(!needsBus)field.checked=false;
+    });
+  }));
+}
+configureBusLocation('bus-ida','bus-ida-location');
+configureBusLocation('bus-vuelta','bus-vuelta-location');
+
 const formModal=document.querySelector('#form-modal');
 const openFormButton=document.querySelector('[data-open-form]');
 const closeFormButton=document.querySelector('[data-close-form]');
