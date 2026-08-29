@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#173f32" />
+    <meta name="description" content="Toda la información para celebrar nuestra boda en Gijón." />
+    <title>Nuestra boda · Gijón</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Allura&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="grain" aria-hidden="true"></div>
+    <header class="site-header">
+      <a class="monogram" href="#inicio" aria-label="Volver al inicio">C <span>&</span> P</a>
+      <button class="menu-button" type="button" aria-expanded="false" aria-controls="main-nav">
+        <span></span><span></span><span></span><span class="sr-only">Abrir menú</span>
+      </button>
+      <nav id="main-nav" aria-label="Navegación principal">
+        <a href="#historia">Nuestra historia</a>
+        <a href="#gijon">Gijón</a>
+        <a href="#alojamiento">Alojamiento</a>
+        <a href="#asistencia">Asistencia</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero" id="inicio">
+        <div class="hero-copy reveal">
+          <img class="hero-venue" src="assets/quinta-acuarela.png" alt="Acuarela de La Quinta del Ynfanzón" />
+          <h1>Cris <span>&</span> Pela</h1>
+          <p class="hero-date">Sábado, 24 de julio de 2027</p>
+          <div class="hero-places">
+            <p><span>Ceremonia</span>Iglesia de San Julián de Somió</p>
+            <i aria-hidden="true"></i>
+            <p><span>Celebración</span>La Quinta del Ynfanzón</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="event section" id="celebracion">
+        <article class="event-row reveal">
+          <div class="event-image church"><img src="assets/iglesia-acuarela.png" alt="Acuarela de la iglesia de San Julián de Somió" /></div>
+          <div class="event-copy">
+            <header><span>01.</span><h2>Ceremonia</h2></header>
+            <p>Sábado · 13:00 h</p>
+            <a href="https://maps.google.com/?q=Iglesia+de+San+Julian+de+Somio+Gijon" target="_blank" rel="noreferrer">Iglesia de San Julián de Somió<br />Gijón, Asturias</a>
+          </div>
+        </article>
+        <article class="event-row reveal">
+          <div class="event-image venue"><img src="assets/quinta-acuarela.png" alt="Acuarela de La Quinta del Ynfanzón" /></div>
+          <div class="event-copy">
+            <header><span>02.</span><h2>Celebración</h2></header>
+            <p>Sábado · Después de la ceremonia</p>
+            <a href="https://maps.google.com/?q=La+Quinta+del+Ynfanzon+Gijon" target="_blank" rel="noreferrer">La Quinta del Ynfanzón<br />Gijón, Asturias</a>
+          </div>
+        </article>
+      </section>
+
+      <section class="story section" id="historia">
+        <div class="section-heading reveal">
+          <p class="eyebrow">Hasta llegar aquí</p>
+          <h2>Nuestra historia</h2>
+          <p>Una colección de lugares, pequeños instantes y recuerdos compartidos.</p>
+        </div>
+        <div class="timeline">
+          <article class="timeline-item reveal">
+            <figure class="story-photo photo-one"><img src="assets/cris-pela-iglesia.jpeg" alt="Cris y Pela juntos frente a una iglesia" /></figure>
+            <div class="timeline-copy"><time>Nosotros</time><h3>Todo empezó aquí</h3><p>Ese primer capítulo que algún día contaríamos una y otra vez.</p></div>
+          </article>
+          <article class="timeline-item reverse reveal">
+            <figure class="story-photo photo-two"><img src="assets/cris-pela-celebrando.jpeg" alt="Cris y Pela celebrando juntos" /></figure>
+            <div class="timeline-copy"><time>La aventura</time><h3>Y seguimos sumando</h3><p>Viajes, sobremesas, planes improvisados y una vida cada vez más nuestra.</p></div>
+          </article>
+          <article class="timeline-item reveal">
+            <figure class="story-photo save-date-photo"><img src="assets/save-the-date.jpeg" alt="Save the date de la boda de Cris y Pela" /></figure>
+            <div class="timeline-copy"><time>El gran sí</time><h3>Nos casamos</h3><p>Ahora empieza nuestro capítulo favorito. Gracias por formar parte de él.</p></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="gijon section" id="gijon">
+        <div class="section-heading light reveal">
+          <p class="eyebrow">Saborea la ciudad</p>
+          <h2>Comer y beber en Gijón</h2>
+          <p>Julio es temporada alta. Nuestro consejo: reservad con tiempo allí donde queráis ir.</p>
+        </div>
+        <div class="filters reveal" role="group" aria-label="Filtrar recomendaciones">
+          <button class="active" data-filter="all">Todos</button>
+          <button data-filter="centro">En el centro</button>
+          <button data-filter="terraza">Con terraza</button>
+          <button data-filter="copas">Para tomar algo</button>
+        </div>
+        <div class="places-grid" id="places-grid"></div>
+      </section>
+
+      <section class="stay section" id="alojamiento">
+        <div class="stay-intro reveal">
+          <p class="eyebrow">Dormir en Gijón</p>
+          <h2>Dónde alojarse</h2>
+          <p>Estamos preparando una selección de alojamientos bien situados para todos los gustos. Muy pronto compartiremos aquí los hoteles recomendados y las condiciones de reserva.</p>
+        </div>
+        <div class="stay-card reveal">
+          <span class="stay-number">01</span>
+          <div><p class="eyebrow">Próximamente</p><h3>Hoteles recomendados</h3><p>Opciones en el centro, cerca de la playa y con fácil acceso a la celebración.</p></div>
+          <span class="arrow">↗</span>
+        </div>
+        <p class="stay-note reveal">Gijón se llena en verano. En cuanto publiquemos la selección, os recomendamos reservar cuanto antes.</p>
+      </section>
+
+      <section class="rsvp section" id="asistencia">
+        <div class="rsvp-leaf" aria-hidden="true">❧</div>
+        <div class="reveal">
+          <p class="eyebrow">¿Nos acompañas?</p>
+          <h2>Nos hará mucha ilusión<br />celebrarlo contigo</h2>
+          <p>Cuando tengamos listo el formulario, podrás confirmar tu asistencia desde aquí.</p>
+          <a class="button button-dark disabled" href="#" aria-disabled="true">Formulario próximamente</a>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <a class="monogram" href="#inicio">C <span>&</span> P</a>
+      <p>Con mucho cariño · Gijón</p>
+      <a href="#inicio">Volver arriba ↑</a>
+    </footer>
+    <script src="script.js"></script>
+  </body>
+</html>
