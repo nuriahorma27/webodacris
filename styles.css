@@ -160,7 +160,8 @@ html{scroll-padding-top:76px}
 .rsvp-photo img{width:100%;height:100%;object-fit:cover;object-position:center 34%;filter:none}
 .rsvp-logo{width:min(100%,430px);height:min(66vh,600px);margin-inline:auto;overflow:hidden;filter:none;mask-image:none;-webkit-mask-image:none}
 .rsvp-logo:after{display:none}
-.rsvp-logo svg{display:block;width:100%;height:100%;transform:scale(1.22);transform-origin:center}
+.rsvp-logo svg{display:block;width:100%;height:100%;transform:scale(2.85);transform-origin:center}
+@media(min-width:761px){.rsvp-logo svg{transform:scale(2.35)}}
 .rsvp-copy{max-width:620px!important;margin:0!important;text-align:left}
 .rsvp-copy p{margin-left:0;margin-right:0}
 @media(max-width:760px){.rsvp{grid-template-columns:1fr;gap:20px;padding:65px 24px;text-align:center}.rsvp-photo{width:min(420px,100%);height:43vh;margin:0 auto}.rsvp-copy{margin:0 auto!important;text-align:center}.rsvp-copy p{margin-left:auto;margin-right:auto}}
