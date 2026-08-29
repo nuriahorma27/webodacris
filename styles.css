@@ -82,3 +82,19 @@
 .guide-card .place-tag{color:#f4ecd9;border-color:rgba(251,245,231,.42)}
 .guide-card h4,.guide-card>p,.guide-card address,.guide-card a{color:#fbf5e7}
 .guide-card address{border-color:rgba(251,245,231,.35)}
+
+/* Buses: ruta visual */
+.transport{min-height:82svh;display:flex;flex-direction:column;justify-content:center;gap:45px;padding-top:65px;padding-bottom:65px;text-align:center}
+.transport-copy{max-width:720px;margin:0 auto}
+.transport-copy h2{font-family:"Cormorant Garamond",Georgia,serif;font-size:clamp(60px,6vw,86px);font-style:normal;line-height:.9;margin-bottom:20px}
+.transport-copy>p:last-child{max-width:620px;margin:0 auto;color:#465344;font-size:17px;line-height:1.55}
+.bus-route{width:min(1100px,100%);margin:0 auto;display:grid;grid-template-columns:1fr 180px 1fr;align-items:stretch;gap:25px}
+.bus-stop{min-height:245px;padding:35px 34px;display:flex;flex-direction:column;justify-content:center;color:#fbf5e7;background:#6c795f;text-align:left}
+.bus-stop:last-child{background:#788469}
+.bus-stop>span{font-size:11px;font-weight:500;letter-spacing:.19em;text-transform:uppercase;color:#eee7d5}
+.bus-stop h3{margin:14px 0 12px;color:#fff8e9;font-family:"Cormorant Garamond",Georgia,serif;font-size:34px;font-style:normal;font-weight:500;line-height:1}
+.bus-stop p{margin:0;color:#f8f0df;font-size:15px;line-height:1.55}
+.bus-line{display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--green)}
+.bus-line i{width:1px;height:40px;background:var(--line)}
+.bus-line svg{width:105px;margin:12px 0;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+@media(max-width:760px){.transport{gap:32px}.transport-copy h2{font-size:64px}.transport-copy>p:last-child{font-size:15px}.bus-route{grid-template-columns:1fr;gap:0}.bus-stop{min-height:210px;padding:28px}.bus-line{height:100px}.bus-line i{height:14px}.bus-line svg{width:82px;margin:5px}.bus-stop h3{font-size:31px}}
