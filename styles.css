@@ -27,3 +27,25 @@
 .hero,.event,.transport,.rsvp,.wedding-list{border:0;border-image:none}
 .hero h1,.event-copy h2,.guide-menu h2,.guide-carousel-heading h3,.transport h2,.rsvp h2,.wedding-list h2,.guide-card h4,.transport-times h3{font-family:"Italianno",cursive;font-style:normal;font-weight:400}
 .city-guide:before,.city-guide:after{display:none;content:none}
+
+/* Guía legible: estructura editorial rústica */
+.city-guide{grid-template-columns:minmax(270px,32%) minmax(0,68%);color:#3f4d3f;background-color:#f4ecdc}
+.guide-menu{padding:clamp(45px,5vw,75px);background:rgba(238,227,206,.68);border-right:1px solid rgba(63,81,66,.32)}
+.guide-menu .eyebrow{color:#6d765f;font-size:10px;font-weight:500}
+.guide-menu h2{margin:0 0 48px;color:#3f5142;font-family:"Cormorant Garamond",Georgia,serif;font-size:clamp(48px,5vw,69px);font-style:normal;line-height:.88;letter-spacing:-.025em}
+.guide-menu button{padding:17px 3px;color:#3f5142;border-color:rgba(63,81,66,.3);font-family:"Cormorant Garamond",Georgia,serif;font-size:23px;font-weight:500;opacity:.58}
+.guide-menu button span{font-size:11px}
+.guide-menu button.active{padding-left:25px;color:#263d30;opacity:1}
+.guide-carousel-wrap{padding-left:clamp(32px,4vw,60px);background:rgba(250,246,235,.35)}
+.guide-carousel-heading{margin-bottom:27px}
+.guide-carousel-heading .eyebrow{color:#68725c;font-size:10px}
+.guide-carousel-heading h3{color:#344a39;font-family:"Cormorant Garamond",Georgia,serif;font-size:clamp(39px,4vw,54px);font-style:normal;line-height:1}
+.carousel-controls button{width:40px;height:38px;padding:0;border:1px solid rgba(52,74,57,.4);color:#344a39;background:rgba(250,246,235,.7);font-size:20px}
+.guide-carousel{gap:18px;padding-top:4px}
+.guide-card{flex:0 0 min(390px,72vw);min-height:390px;padding:31px 28px;color:#344a39;background:#faf5e9;border:1px solid rgba(63,81,66,.35);box-shadow:0 8px 22px rgba(76,67,48,.08);clip-path:none;transform:none!important}
+.guide-card .place-tag{color:#5c684f;border-color:rgba(63,81,66,.32);font-size:9px;font-weight:500}
+.guide-card h4{margin:25px 0 13px;color:#344a39;font-family:"Cormorant Garamond",Georgia,serif;font-size:31px;font-style:normal;font-weight:500;line-height:1.05}
+.guide-card>p{color:#4e584b;font-size:13px;line-height:1.65}
+.guide-card address{color:#445245;border-color:rgba(63,81,66,.28);font-family:"DM Sans",sans-serif;font-size:10px;line-height:1.55}
+.carousel-hint{color:#5c684f;font-family:"DM Sans",sans-serif;font-size:9px;font-style:normal;letter-spacing:.12em;text-transform:uppercase}
+@media(max-width:720px){.city-guide{grid-template-columns:1fr}.guide-menu{min-height:auto;padding:38px 22px}.guide-menu h2{margin-bottom:25px;font-size:47px}.guide-menu nav{gap:5px}.guide-menu button{font-size:17px}.guide-carousel-wrap{padding-left:20px}.guide-card{flex-basis:min(340px,82vw);min-height:365px}.guide-carousel-heading h3{font-size:38px}}
