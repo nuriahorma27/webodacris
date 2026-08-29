@@ -329,8 +329,8 @@ html,body{max-width:100%;overflow-x:hidden}
   .event{justify-content:center;gap:24px;padding:18px 18px 30px}
   .event-row{grid-template-columns:1fr;gap:14px}
   .event-image,.event-row:last-child .event-image{grid-column:1;grid-row:1;height:clamp(190px,32svh,260px)}
-  .event-copy,.event-row:last-child .event-copy{grid-column:1;grid-row:2;padding:0 4px;text-align:left}
-  .event-copy header,.event-row:last-child .event-copy header{justify-content:flex-start;margin-bottom:5px;gap:8px}
+  .event-copy,.event-row:last-child .event-copy{grid-column:1;grid-row:2;padding:0 4px;text-align:center}
+  .event-copy header,.event-row:last-child .event-copy header{justify-content:center;margin-bottom:5px;gap:8px}
   .event-copy h2{font-size:45px}
   .event-copy>p,.event-copy>a{font-size:16px;line-height:1.3}
 
