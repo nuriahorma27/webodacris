@@ -281,3 +281,38 @@ body:before{display:none}
 .guide-card address{font-style:normal;font-size:9px;line-height:1.5;margin-top:auto;padding-top:16px;border-top:1px solid rgba(101,112,82,.2)}
 .guide-card a{color:inherit}.carousel-hint{text-transform:uppercase;letter-spacing:.17em;font-size:8px;color:#8b927d;margin:5px 0 0}
 @media(max-width:720px){.city-guide{grid-template-columns:1fr;min-height:auto}.guide-menu{min-height:42svh;padding:42px 25px}.guide-menu h2{font-size:54px;margin-bottom:25px}.guide-menu nav{display:grid;grid-template-columns:repeat(3,1fr)}.guide-menu button{font-size:15px;gap:5px;padding:12px 5px}.guide-carousel-wrap{min-height:58svh;padding:38px 0 38px 22px}.guide-carousel-heading{padding-right:22px;margin-bottom:22px}.guide-carousel-heading h3{font-size:37px}.guide-card{min-height:310px}}
+
+/* Acabado rústico inspirado en papelería artesanal */
+:root{--invite-paper:#f6efdf;--invite-green:#667055;--invite-deep:#4f5d49;--rust:#a87943;--faded-line:rgba(102,112,85,.28)}
+.eyebrow{letter-spacing:.2em;font-weight:400}
+.button{border-radius:0;font-family:"Cormorant Garamond",Georgia,serif;font-size:13px;letter-spacing:.1em;text-transform:none}
+
+.city-guide{grid-template-columns:minmax(285px,.7fr) minmax(0,1.3fr);background-color:var(--invite-paper);background-image:var(--paper-texture);position:relative}
+.city-guide:before,.city-guide:after{content:"❧";position:absolute;z-index:2;font:400 44px Georgia,serif;color:rgba(102,112,85,.32);pointer-events:none}
+.city-guide:before{left:26px;top:20px;transform:rotate(-28deg)}
+.city-guide:after{right:26px;bottom:18px;transform:rotate(152deg)}
+.guide-menu{position:relative;background:transparent;color:var(--invite-green);border-right:1px solid var(--faded-line);padding-right:clamp(40px,6vw,85px)}
+.guide-menu:after{content:"";position:absolute;right:-5px;top:8%;width:9px;height:84%;border-left:1px solid rgba(168,121,67,.16);border-right:1px solid rgba(168,121,67,.1);transform:rotate(.25deg)}
+.guide-menu .eyebrow{color:#8b7a5d}
+.guide-menu h2{font-style:italic;font-size:clamp(51px,5.6vw,76px);line-height:.85;color:var(--invite-green)}
+.guide-menu button{position:relative;border-bottom:1px solid var(--faded-line);font-size:23px;color:var(--invite-green);opacity:.62}
+.guide-menu button:first-child{border-top:1px solid var(--faded-line)}
+.guide-menu button.active{padding-left:24px;opacity:1}
+.guide-menu button.active:before{content:"—";position:absolute;left:0;color:var(--rust)}
+.guide-carousel-wrap{position:relative}
+.guide-carousel-heading h3{font-style:italic;color:var(--invite-green)}
+.carousel-controls{gap:13px}
+.carousel-controls button{width:auto;height:auto;padding:4px;border:0;border-bottom:1px solid var(--faded-line);border-radius:0;font:20px "Cormorant Garamond",Georgia,serif;color:var(--invite-green)}
+.guide-carousel{gap:24px;padding-top:10px}
+.guide-card{position:relative;flex-basis:min(300px,72vw);min-height:355px;padding:31px 27px;border:1px solid rgba(139,122,93,.3);background-color:rgba(250,246,235,.72);background-image:var(--paper-texture);box-shadow:3px 5px 0 rgba(139,122,93,.07);clip-path:polygon(.5% 1%,99.3% 0,100% 98.7%,1% 100%)}
+.guide-card:nth-child(even){transform:rotate(.35deg)}
+.guide-card:nth-child(3n){transform:rotate(-.3deg)}
+.guide-card:before{content:"";position:absolute;left:18px;right:22px;top:14px;height:1px;background:rgba(168,121,67,.22);transform:rotate(-.5deg)}
+.guide-card .place-tags{margin-top:5px}
+.guide-card .place-tag{border:0;border-bottom:1px solid rgba(102,112,85,.3);padding:3px 1px;color:#7b755e}
+.guide-card h4{font-size:29px;font-style:italic;color:var(--invite-green)}
+.guide-card address{border-top:1px solid var(--faded-line);font-family:"Cormorant Garamond",Georgia,serif;font-size:12px}
+.carousel-hint{font-family:"Cormorant Garamond",Georgia,serif;font-size:11px;letter-spacing:.1em;text-transform:none;font-style:italic}
+.transport-times article,.stay-card{border-color:var(--faded-line)}
+.filters button{border-radius:0;font-family:"Cormorant Garamond",Georgia,serif;text-transform:none;letter-spacing:.06em}
+@media(max-width:720px){.city-guide{grid-template-columns:1fr}.guide-menu{border-right:0;border-bottom:1px solid var(--faded-line);min-height:40svh}.guide-menu:after{display:none}.guide-menu h2{font-size:51px}.guide-menu button{font-size:16px}.guide-menu button.active{padding-left:13px}.guide-carousel-wrap{min-height:60svh}.city-guide:before,.city-guide:after{font-size:32px}}
