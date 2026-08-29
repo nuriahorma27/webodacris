@@ -41,43 +41,23 @@
       </section>
 
       <section class="city-guide" id="guia">
-        <a class="guide-half guide-food reveal" href="#gijon">
-          <span class="guide-number">01.</span>
-          <div><p class="eyebrow">Saborea la ciudad</p><h2>Dónde<br />comer</h2><p>Sidrerías, terrazas y nuestros sitios favoritos de Gijón.</p><span class="guide-link">Ver recomendaciones →</span></div>
-        </a>
-        <a class="guide-half guide-stay reveal" href="#alojamiento">
-          <span class="guide-number">02.</span>
-          <div><p class="eyebrow">Descansa cerca</p><h2>Dónde<br />alojarse</h2><p>Una selección de hoteles para disfrutar del fin de semana.</p><span class="guide-link">Ver alojamientos →</span></div>
-        </a>
-      </section>
-
-      <section class="gijon section" id="gijon">
-        <div class="section-heading light reveal">
-          <p class="eyebrow">Saborea la ciudad</p>
-          <h2>Comer y beber en Gijón</h2>
-          <p>Julio es temporada alta. Nuestro consejo: reservad con tiempo allí donde queráis ir.</p>
+        <aside class="guide-menu reveal">
+          <p class="eyebrow">Nuestra guía de Gijón</p>
+          <h2>Para el<br />fin de semana</h2>
+          <nav aria-label="Categorías de recomendaciones">
+            <button class="active" data-guide="restaurants"><span>01.</span>Restaurantes</button>
+            <button data-guide="hotels"><span>02.</span>Hoteles</button>
+            <button data-guide="hair"><span>03.</span>Peluquerías</button>
+          </nav>
+        </aside>
+        <div class="guide-carousel-wrap reveal">
+          <div class="guide-carousel-heading">
+            <div><p class="eyebrow" id="guide-eyebrow">Dónde comer</p><h3 id="guide-title">Nuestros favoritos</h3></div>
+            <div class="carousel-controls"><button id="guide-prev" aria-label="Anterior">←</button><button id="guide-next" aria-label="Siguiente">→</button></div>
+          </div>
+          <div class="guide-carousel" id="guide-carousel" aria-live="polite"></div>
+          <p class="carousel-hint">Desliza para ver más</p>
         </div>
-        <div class="filters reveal" role="group" aria-label="Filtrar recomendaciones">
-          <button class="active" data-filter="all">Todos</button>
-          <button data-filter="centro">En el centro</button>
-          <button data-filter="terraza">Con terraza</button>
-          <button data-filter="copas">Para tomar algo</button>
-        </div>
-        <div class="places-grid" id="places-grid"></div>
-      </section>
-
-      <section class="stay section" id="alojamiento">
-        <div class="stay-intro reveal">
-          <p class="eyebrow">Dormir en Gijón</p>
-          <h2>Dónde alojarse</h2>
-          <p>Estamos preparando una selección de alojamientos bien situados para todos los gustos. Muy pronto compartiremos aquí los hoteles recomendados y las condiciones de reserva.</p>
-        </div>
-        <div class="stay-card reveal">
-          <span class="stay-number">01</span>
-          <div><p class="eyebrow">Próximamente</p><h3>Hoteles recomendados</h3><p>Opciones en el centro, cerca de la playa y con fácil acceso a la celebración.</p></div>
-          <span class="arrow">↗</span>
-        </div>
-        <p class="stay-note reveal">Gijón se llena en verano. En cuanto publiquemos la selección, os recomendamos reservar cuanto antes.</p>
       </section>
 
       <section class="event section" id="itinerario">

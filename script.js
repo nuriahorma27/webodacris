@@ -18,6 +18,7 @@ const places = [
 
 const grid = document.querySelector('#places-grid');
 function renderPlaces(filter='all'){
+  if (!grid) return;
   grid.innerHTML = places.filter(p => filter === 'all' || p.filter.includes(filter)).map(p => `
     <article class="place">
       <div class="place-tags">${p.tags.map(t=>`<span class="place-tag">${t}</span>`).join('')}</div>
@@ -27,8 +28,36 @@ function renderPlaces(filter='all'){
 }
 renderPlaces();
 
+const guideData = {
+  restaurants: {eyebrow:'Dónde comer', title:'Nuestros favoritos', items:places},
+  hotels: {eyebrow:'Dónde dormir', title:'Hoteles recomendados', items:[
+    {name:'Selección próximamente',tags:['alojamiento'],text:'Estamos preparando opciones en el centro, cerca de la playa y bien comunicadas.',address:'Gijón',phone:''}
+  ]},
+  hair: {eyebrow:'Para estar a punto', title:'Peluquerías', items:[
+    {name:'Selección próximamente',tags:['belleza'],text:'Muy pronto compartiremos peluquerías recomendadas y sus datos de reserva.',address:'Gijón',phone:''}
+  ]}
+};
+const guideCarousel=document.querySelector('#guide-carousel');
+function renderGuide(category='restaurants'){
+  if(!guideCarousel)return;
+  const data=guideData[category];
+  document.querySelector('#guide-eyebrow').textContent=data.eyebrow;
+  document.querySelector('#guide-title').textContent=data.title;
+  guideCarousel.innerHTML=data.items.map(item=>`<article class="guide-card">
+    <div class="place-tags">${item.tags.map(tag=>`<span class="place-tag">${tag}</span>`).join('')}</div>
+    <h4>${item.name}</h4><p>${item.text}</p><address>${item.address}${item.phone?` · <a href="tel:${item.phone.replace(/[^+\d]/g,'')}">${item.phone}</a>`:''}</address>
+  </article>`).join('');
+  guideCarousel.scrollLeft=0;
+}
+renderGuide();
+document.querySelectorAll('[data-guide]').forEach(button=>button.addEventListener('click',()=>{
+  document.querySelector('[data-guide].active')?.classList.remove('active');button.classList.add('active');renderGuide(button.dataset.guide);
+}));
+document.querySelector('#guide-prev')?.addEventListener('click',()=>guideCarousel.scrollBy({left:-340,behavior:'smooth'}));
+document.querySelector('#guide-next')?.addEventListener('click',()=>guideCarousel.scrollBy({left:340,behavior:'smooth'}));
+
 document.querySelectorAll('.filters button').forEach(button => button.addEventListener('click',()=>{
-  document.querySelector('.filters .active').classList.remove('active');
+  document.querySelector('.filters .active')?.classList.remove('active');
   button.classList.add('active'); renderPlaces(button.dataset.filter);
 }));
 
