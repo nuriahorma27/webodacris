@@ -98,3 +98,8 @@
 .bus-line i{width:1px;height:40px;background:var(--line)}
 .bus-line svg{width:105px;margin:12px 0;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 @media(max-width:760px){.transport{gap:32px}.transport-copy h2{font-size:64px}.transport-copy>p:last-child{font-size:15px}.bus-route{grid-template-columns:1fr;gap:0}.bus-stop{min-height:210px;padding:28px}.bus-line{height:100px}.bus-line i{height:14px}.bus-line svg{width:82px;margin:5px}.bus-stop h3{font-size:31px}}
+
+/* La guía ocupa la pantalla sin agrandar las fichas */
+.city-guide{height:100svh;min-height:620px;max-height:none}
+.guide-menu,.guide-carousel-wrap{height:100%;justify-content:center}
+@media(max-width:720px){.city-guide{height:auto;min-height:100svh}.guide-menu,.guide-carousel-wrap{height:auto}.guide-menu{min-height:38svh}.guide-carousel-wrap{min-height:62svh}}
