@@ -207,3 +207,21 @@ body:before{display:none}
 .event-image.venue img{transform:scale(1.03)}
 .event-copy header{margin-bottom:14px}
 @media(max-width:720px){.event{gap:55px;padding-top:55px;padding-bottom:55px}.event-row,.event-row:last-child{grid-template-columns:1fr;gap:20px}.event-row .event-image,.event-row .event-copy,.event-row:last-child .event-image,.event-row:last-child .event-copy{grid-column:1;grid-row:auto}.event-row .event-image{height:280px}.event-row:last-child .event-copy{grid-row:2;text-align:right}.event-row:last-child .event-image{grid-row:1}.event-copy{padding:0 6px}}
+
+/* Buses, formulario y lista de boda */
+.transport,.wedding-list{min-height:100svh;background-color:var(--invite-paper);background-image:var(--paper-texture);background-size:240px 240px}
+.transport{display:grid;grid-template-columns:.8fr 1.2fr;gap:10vw;align-items:center;padding-top:75px;padding-bottom:75px}
+.transport-copy h2,.wedding-list h2{font-family:"Cormorant Garamond",Georgia,serif;font-size:clamp(55px,8vw,105px);font-weight:400;line-height:.9;color:var(--invite-green);margin:0 0 25px}
+.transport-copy>p:last-child{max-width:430px;font-size:14px}
+.transport-times{border-top:1px solid rgba(101,112,82,.3)}
+.transport-times article{display:grid;grid-template-columns:70px 1fr;gap:25px;padding:30px 0;border-bottom:1px solid rgba(101,112,82,.3)}
+.transport-times span,.list-coming{text-transform:uppercase;letter-spacing:.2em;font-size:9px;color:#7b846b}
+.transport-times h3{font-family:"Cormorant Garamond",Georgia,serif;font-size:27px;font-weight:400;color:var(--invite-green);margin:0 0 5px}
+.transport-times p{grid-column:2;font-size:12px;margin:-20px 0 0;color:#5f6859}
+.wedding-list{display:grid;place-items:center;text-align:center;position:relative;overflow:hidden}
+.wedding-list:before,.wedding-list:after{content:"";position:absolute;width:390px;height:390px;border:1px solid rgba(101,112,82,.16);border-radius:50%}
+.wedding-list:before{left:-220px;top:-170px}.wedding-list:after{right:-220px;bottom:-170px}
+.wedding-list>div{max-width:680px;position:relative;z-index:1}
+.wedding-list p:not(.eyebrow){max-width:520px;margin:0 auto 28px;font-size:14px}
+.list-coming{display:inline-block;border-top:1px solid rgba(101,112,82,.35);padding-top:16px}
+@media(max-width:760px){.transport{grid-template-columns:1fr;gap:45px}.transport-copy h2,.wedding-list h2{font-size:62px}.transport-times article{padding:23px 0}.rsvp h2{font-size:47px}}
