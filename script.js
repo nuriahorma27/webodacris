@@ -68,3 +68,70 @@ nav.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{nav.classLi
 
 const observer=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('visible');observer.unobserve(entry.target)}}),{threshold:.12});
 document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));
+
+const navLinks=[...document.querySelectorAll('#main-nav a[href^="#"]')];
+const navSections=navLinks.map(link=>document.querySelector(link.getAttribute('href'))).filter(Boolean);
+const sectionObserver=new IntersectionObserver(entries=>{
+  entries.forEach(entry=>{
+    if(!entry.isIntersecting)return;
+    navLinks.forEach(link=>link.classList.toggle('active',link.getAttribute('href')===`#${entry.target.id}`));
+  });
+},{rootMargin:'-30% 0px -60% 0px',threshold:0});
+navSections.forEach(section=>sectionObserver.observe(section));
+
+const companionFields=document.querySelector('#companion-fields');
+const companionAllergies=document.querySelector('#companion-allergies');
+const companionQuestion=document.querySelector('#companion-question');
+const attendanceInputs=document.querySelectorAll('input[name="asistencia"]');
+attendanceInputs.forEach(input=>input.addEventListener('change',()=>{
+  const attending=input.value==='Sí';
+  companionQuestion.hidden=!attending;
+  companionQuestion.querySelectorAll('input[name="acompanante"]').forEach(field=>{
+    field.required=attending;
+    if(!attending)field.checked=false;
+  });
+  if(!attending){
+    companionFields.hidden=true;
+    companionAllergies.hidden=true;
+    companionFields.querySelectorAll('input').forEach(field=>field.required=false);
+  }
+}));
+document.querySelectorAll('input[name="acompanante"]').forEach(input=>input.addEventListener('change',()=>{
+  const withCompanion=input.value==='Sí';
+  companionFields.hidden=!withCompanion;
+  companionAllergies.hidden=!withCompanion;
+  companionFields.querySelectorAll('input').forEach(field=>field.required=withCompanion);
+}));
+
+const formSteps=[...document.querySelectorAll('.form-step')];
+const progressDots=[...document.querySelectorAll('.form-progress span')];
+let currentStep=0;
+function showFormStep(index){
+  currentStep=index;
+  formSteps.forEach((step,i)=>step.classList.toggle('active',i===index));
+  progressDots.forEach((dot,i)=>dot.classList.toggle('active',i<=index));
+}
+document.querySelectorAll('.form-next').forEach(button=>button.addEventListener('click',()=>{
+  const fields=[...formSteps[currentStep].querySelectorAll('input,textarea')].filter(field=>!field.disabled&&!field.closest('[hidden]'));
+  if(!fields.every(field=>field.reportValidity()))return;
+  showFormStep(Math.min(currentStep+1,formSteps.length-1));
+}));
+document.querySelectorAll('.form-back').forEach(button=>button.addEventListener('click',()=>{
+  showFormStep(Math.max(currentStep-1,0));
+}));
+
+const formModal=document.querySelector('#form-modal');
+const openFormButton=document.querySelector('[data-open-form]');
+const closeFormButton=document.querySelector('[data-close-form]');
+openFormButton?.addEventListener('click',()=>{
+  showFormStep(0);
+  formModal.showModal();
+  document.body.classList.add('modal-open');
+});
+function closeFormModal(){
+  formModal.close();
+  document.body.classList.remove('modal-open');
+}
+closeFormButton?.addEventListener('click',closeFormModal);
+formModal?.addEventListener('click',event=>{if(event.target===formModal)closeFormModal()});
+formModal?.addEventListener('close',()=>document.body.classList.remove('modal-open'));

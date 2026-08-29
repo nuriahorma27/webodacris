@@ -9,12 +9,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&family=Italianno&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=save-the-date-9" />
+    <link rel="stylesheet" href="styles.css?v=save-the-date-19" />
   </head>
   <body>
     <div class="grain" aria-hidden="true"></div>
     <header class="site-header">
-      <a class="monogram" href="#inicio" aria-label="Volver al inicio">C <span>&</span> P</a>
+      <a class="monogram logo-mark" href="#inicio" aria-label="Volver al inicio"><img src="assets/logo-cp.png" alt="Cris y Pela" /></a>
       <button class="menu-button" type="button" aria-expanded="false" aria-controls="main-nav">
         <span></span><span></span><span></span><span class="sr-only">Abrir menú</span>
       </button>
@@ -92,7 +92,7 @@
           </article>
           <div class="bus-line" aria-hidden="true">
             <i></i>
-            <svg viewBox="0 0 120 60"><path d="M18 38h78V20c0-6-5-11-11-11H35c-9 0-17 8-17 17v12Zm0 0h-7v8h96v-8H96M35 9v29M61 9v29M87 10v28M30 50a7 7 0 1 0 0 .1M88 50a7 7 0 1 0 0 .1" /></svg>
+            <img src="assets/bus-acuarela.png" alt="" />
             <i></i>
           </div>
           <article class="bus-stop">
@@ -102,13 +102,51 @@
       </section>
 
       <section class="rsvp section" id="formulario">
-        <div class="reveal">
+        <figure class="rsvp-photo reveal"><img src="assets/cris-pela-iglesia.jpeg" alt="Cris y Pela juntos" /></figure>
+        <div class="rsvp-copy reveal">
           <p class="eyebrow">¿Nos acompañas?</p>
           <h2>Confirma tu asistencia</h2>
-          <p>Cuando tengamos listo el formulario, podrás confirmar tu asistencia desde aquí.</p>
-          <a class="button button-dark disabled" href="#" aria-disabled="true">Formulario próximamente</a>
+          <p>Nos hará mucha ilusión saber si podremos contar contigo en este día tan especial.</p>
+          <button class="open-form" type="button" data-open-form>Rellenar formulario</button>
         </div>
       </section>
+
+      <dialog class="form-modal" id="form-modal" aria-labelledby="form-modal-title">
+        <div class="form-modal-inner">
+          <button class="form-close" type="button" data-close-form aria-label="Cerrar formulario">×</button>
+          <p class="eyebrow">Confirmación de asistencia</p>
+          <h2 id="form-modal-title">¿Nos acompañas?</h2>
+          <form class="wedding-form" name="confirmacion-boda" method="POST" data-netlify="true" netlify-honeypot="bot-field">
+            <input type="hidden" name="form-name" value="confirmacion-boda" />
+            <p class="sr-only"><label>No rellenes este campo: <input name="bot-field" /></label></p>
+            <div class="form-progress" aria-label="Progreso del formulario"><span class="active">Datos personales</span><span>Alergias</span><span>Buses</span></div>
+            <section class="form-step active" data-step="1">
+              <div class="name-fields">
+                <label class="form-field"><span>Nombre</span><input type="text" name="nombre" autocomplete="given-name" required /></label>
+                <label class="form-field"><span>Apellidos</span><input type="text" name="apellidos" autocomplete="family-name" required /></label>
+              </div>
+              <label class="form-field"><span>Dirección</span><input type="text" name="direccion" autocomplete="street-address" required /></label>
+              <fieldset><legend>¿Vas a asistir?</legend><label><input type="radio" name="asistencia" value="Sí" required /> Sí</label><label><input type="radio" name="asistencia" value="No" required /> No</label></fieldset>
+              <div class="conditional" id="companion-question" hidden><fieldset><legend>¿Vienes con acompañante?</legend><label><input type="radio" name="acompanante" value="Sí" /> Sí</label><label><input type="radio" name="acompanante" value="No" /> No</label></fieldset>
+                <div class="conditional name-fields" id="companion-fields" hidden>
+                  <label class="form-field"><span>Nombre del acompañante</span><input type="text" name="nombre-acompanante" autocomplete="off" /></label>
+                  <label class="form-field"><span>Apellidos del acompañante</span><input type="text" name="apellidos-acompanante" autocomplete="off" /></label>
+                </div>
+              </div>
+              <div class="step-actions"><button class="form-next" type="button">Continuar</button></div>
+            </section>
+            <section class="form-step" data-step="2">
+              <label class="form-field"><span>Tus alergias o intolerancias</span><textarea name="alergias" rows="2" placeholder="Si no tienes, déjalo en blanco"></textarea></label>
+              <div class="conditional" id="companion-allergies" hidden><label class="form-field"><span>Alergias del acompañante</span><textarea name="alergias-acompanante" rows="2" placeholder="Si no tiene, déjalo en blanco"></textarea></label></div>
+              <div class="step-actions"><button class="form-back" type="button">Volver</button><button class="form-next" type="button">Continuar</button></div>
+            </section>
+            <section class="form-step" data-step="3">
+              <div class="bus-questions"><fieldset><legend>¿Necesitas bus de ida?</legend><label><input type="radio" name="bus-ida" value="Sí" required /> Sí</label><label><input type="radio" name="bus-ida" value="No" required /> No</label></fieldset><fieldset><legend>¿Necesitas bus de vuelta?</legend><label><input type="radio" name="bus-vuelta" value="Sí" required /> Sí</label><label><input type="radio" name="bus-vuelta" value="No" required /> No</label></fieldset></div>
+              <div class="step-actions"><button class="form-back" type="button">Volver</button><button class="form-submit" type="submit">Enviar confirmación</button></div>
+            </section>
+          </form>
+        </div>
+      </dialog>
 
       <section class="wedding-list section" id="lista-boda">
         <div class="reveal">
@@ -121,8 +159,12 @@
     </main>
 
     <footer>
-      <a class="monogram" href="#inicio">C <span>&</span> P</a>
-      <p>Con mucho cariño · Gijón</p>
+      <a class="footer-logo" href="#inicio" aria-label="Volver al inicio">
+        <svg viewBox="0 0 1024 1536" role="img" aria-label="Cris y Pela">
+          <defs><filter id="white-monogram"><feColorMatrix type="matrix" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 -.34 -.34 -.34 .95 0" /><feComponentTransfer><feFuncA type="gamma" amplitude="1" exponent="1.35" offset="0" /></feComponentTransfer></filter></defs>
+          <image href="assets/logo-cp.png" width="1024" height="1536" filter="url(#white-monogram)" />
+        </svg>
+      </a>
       <a href="#inicio">Volver arriba ↑</a>
     </footer>
     <script src="script.js"></script>
