@@ -182,6 +182,7 @@ weddingForm?.addEventListener('submit',async event=>{
     });
     if(!response.ok)throw new Error(response.status);
     weddingForm.hidden=true;
+    formModal.querySelectorAll('.form-modal-inner>.eyebrow,#form-modal-title').forEach(el=>el.hidden=true);
     formSuccess.hidden=false;
   }catch{
     formError.hidden=false;
