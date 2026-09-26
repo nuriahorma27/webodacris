@@ -104,7 +104,7 @@ export function isAdmin(request) {
   const decoded = Buffer.from(request.headers.get('x-admin-auth') || '', 'base64').toString('utf8');
   const separator = decoded.indexOf(':');
   if (separator < 0) return false;
-  const userOk = safeEqual(decoded.slice(0, separator), ADMIN_USER);
+  const userOk = safeEqual(decoded.slice(0, separator).trim().toLowerCase(), ADMIN_USER.trim().toLowerCase());
   const passOk = safeEqual(decoded.slice(separator + 1), ADMIN_PASSWORD);
   return userOk && passOk;
 }

@@ -47,8 +47,8 @@
     <main class="login" id="login-view">
       <form id="login-form">
         <h1>Respuestas</h1>
-        <label><span>Usuario</span><input name="user" autocomplete="username" required /></label>
-        <label><span>Contraseña</span><input name="password" type="password" autocomplete="current-password" required /></label>
+        <label><span>Usuario</span><input name="user" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required /></label>
+        <label><span>Contraseña</span><input name="password" type="password" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" required /></label>
         <button class="primary" type="submit">Entrar</button>
         <p class="error" id="login-error" role="alert"></p>
       </form>
@@ -116,7 +116,7 @@
         event.preventDefault();
         const form = event.target;
         const button = form.querySelector('button');
-        credentials = btoa(unescape(encodeURIComponent(`${form.user.value}:${form.password.value}`)));
+        credentials = btoa(unescape(encodeURIComponent(`${form.user.value.trim()}:${form.password.value}`)));
         sessionStorage.setItem('boda-admin', credentials);
         button.disabled = true;
         loginError.textContent = '';
