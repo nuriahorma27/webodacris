@@ -1,0 +1,13 @@
+name: Resumen semanal de respuestas
+
+on:
+  schedule:
+    - cron: '0 8 * * 1' # lunes 08:00 UTC (10:00 en verano, 09:00 en invierno)
+  workflow_dispatch: # permite lanzarlo a mano desde la pestaña Actions
+
+jobs:
+  enviar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pedir a la web que envíe el Excel por email
+        run: curl -fsS -X POST "${{ vars.SITE_URL }}/api/resumen-semanal" -H "x-cron-secret: ${{ secrets.CRON_SECRET }}"

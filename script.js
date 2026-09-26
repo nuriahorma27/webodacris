@@ -1,12 +1,12 @@
 const placesComer = [
   {name:'Sidrería El Tropical',tags:['cachopo','playa'],filter:['centro'],text:'Frente a la playa. Su plato estrella es el cachopo. No tiene terraza.',address:'Av. Rufo García Rendueles, 3',phone:'984 70 29 78'},
-  {name:'Taberna del Piano',tags:['cachopo','centro'],filter:['centro'],text:'Cachopo y pastel de cabracho. Cochinillo y lechazo por encargo. No tiene terraza.',address:'C. Cabrales, 12',phone:'985 34 22 57'},
+  {name:'Taberna del Piano',tags:['cachopo','centro'],filter:['centro'],text:'Cachopo y pastel de cabracho, cochinillo y lechazo por encargo. No tiene terraza.',address:'C. Cabrales, 12',phone:'985 34 22 57'},
   {name:'Casa Yoli',tags:['merendero','terraza'],filter:['terraza'],text:'Tortilla de patatas, calamares y escalopines. Zona merendero sin reserva y restaurante con reserva.',address:'Carretera de Caldones, 182',phone:'985 36 87 24'},
   {name:'Mesón Sancho',tags:['carnes','centro'],filter:['centro'],text:'Morcilla, criollo, mollejas, chuletones y, en temporada, ventresca de bonito. Necesario reservar.',address:'C. Begoña, 18 / C. de la Merced, 33',phone:'985 35 99 73 / 984 08 55 05'},
   {name:'Casa Segundo',tags:['asturiana','terraza'],filter:['terraza'],text:'Fabada y carne gobernada, ambas por encargo. Se recomienda reservar. Zona merendero.',address:'Camino de las Quintas, 231',phone:'985 33 36 32'},
   {name:'La Casa del Mar',tags:['pescado','marisco'],filter:[],text:'Muy buenos pescados y mariscos. Es necesario reservar. No tiene terraza.',address:'Av. del Príncipe de Asturias, s/n',phone:'985 31 30 55'},
   {name:'Kausa Taberna',tags:['fusión','centro'],filter:['centro'],text:'Cocina japonesa-peruana: ceviche, sushi y arroz con carabineros. Necesario reservar.',address:'C. Santa Doradía, 5',phone:'984 01 80 97'},
-  {name:'El Medio Lleno',tags:['terraza','Viesques'],filter:['terraza'],text:'Tortilla vaga de pulpo, fideuá y langostinos en tempura.',address:'C. Corín Tellado, 2',phone:'984 49 15 02'},
+  {name:'El Medio Lleno',tags:['terraza','Viesques'],filter:['terraza'],text:'Tortilla vaga de pulpo, fideuá y langostinos en tempura.',warning:'Es necesario reservar previamente.',address:'C. Corín Tellado, 2',phone:'984 49 15 02'},
   {name:'La Pondala',tags:['roast beef','terraza'],filter:['terraza'],text:'Necesario reservar. El roast beef con puré de patata es por encargo.',address:'Av. Dionisio Cifuentes, 58',phone:'985 36 11 60'}
 ];
 
@@ -38,9 +38,6 @@ const guideData = {
   vino: {eyebrow:'Para tomar un vino', title:'Bares y terrazas', items:placesVino},
   hotels: {eyebrow:'Dónde dormir', title:'Hoteles recomendados', items:[
     {name:'Selección próximamente',tags:['alojamiento'],text:'Estamos preparando opciones en el centro, cerca de la playa y bien comunicadas.',address:'Gijón',phone:''}
-  ]},
-  hair: {eyebrow:'Para estar a punto', title:'Peluquerías', items:[
-    {name:'Selección próximamente',tags:['belleza'],text:'Muy pronto compartiremos peluquerías recomendadas y sus datos de reserva.',address:'Gijón',phone:''}
   ]}
 };
 const guideCarousel=document.querySelector('#guide-carousel');
@@ -51,7 +48,7 @@ function renderGuide(category='comer'){
   document.querySelector('#guide-title').textContent=data.title;
   guideCarousel.innerHTML=data.items.map(item=>`<article class="guide-card">
     <div class="place-tags">${item.tags.map(tag=>`<span class="place-tag">${tag}</span>`).join('')}</div>
-    <h4>${item.name}</h4><p>${item.text}</p><address>${item.address}${item.phone?` · <a href="tel:${item.phone.replace(/[^+\d]/g,'')}">${item.phone}</a>`:''}</address>
+    <h4>${item.name}</h4><p>${item.text}</p>${item.warning?`<p class="place-warning">⚠ ${item.warning}</p>`:''}<address>${item.address}${item.phone?` · <a href="tel:${item.phone.replace(/[^+\d]/g,'')}">${item.phone}</a>`:''}</address>
   </article>`).join('');
   guideCarousel.scrollLeft=0;
 }
@@ -88,6 +85,15 @@ navSections.forEach(section=>sectionObserver.observe(section));
 const companionFields=document.querySelector('#companion-fields');
 const companionAllergies=document.querySelector('#companion-allergies');
 const companionQuestion=document.querySelector('#companion-question');
+const companionBus=document.querySelector('#companion-bus');
+function toggleCompanionBus(withCompanion){
+  document.querySelectorAll('.companion-only').forEach(el=>el.hidden=!withCompanion);
+  companionBus.querySelectorAll('input[name="bus-ida-acompanante"],input[name="bus-vuelta-acompanante"]').forEach(field=>field.required=withCompanion);
+  if(!withCompanion){
+    companionBus.querySelectorAll('input').forEach(field=>{field.checked=false;field.required=false});
+    companionBus.querySelectorAll('.bus-location').forEach(location=>location.hidden=true);
+  }
+}
 const attendanceInputs=document.querySelectorAll('input[name="asistencia"]');
 attendanceInputs.forEach(input=>input.addEventListener('change',()=>{
   const attending=input.value==='Sí';
@@ -100,6 +106,7 @@ attendanceInputs.forEach(input=>input.addEventListener('change',()=>{
     companionFields.hidden=true;
     companionAllergies.hidden=true;
     companionFields.querySelectorAll('input').forEach(field=>field.required=false);
+    toggleCompanionBus(false);
   }
 }));
 document.querySelectorAll('input[name="acompanante"]').forEach(input=>input.addEventListener('change',()=>{
@@ -107,6 +114,7 @@ document.querySelectorAll('input[name="acompanante"]').forEach(input=>input.addE
   companionFields.hidden=!withCompanion;
   companionAllergies.hidden=!withCompanion;
   companionFields.querySelectorAll('input').forEach(field=>field.required=withCompanion);
+  toggleCompanionBus(withCompanion);
 }));
 
 const formSteps=[...document.querySelectorAll('.form-step')];
@@ -139,6 +147,8 @@ function configureBusLocation(choiceName,locationId){
 }
 configureBusLocation('bus-ida','bus-ida-location');
 configureBusLocation('bus-vuelta','bus-vuelta-location');
+configureBusLocation('bus-ida-acompanante','bus-ida-acompanante-location');
+configureBusLocation('bus-vuelta-acompanante','bus-vuelta-acompanante-location');
 
 const formModal=document.querySelector('#form-modal');
 const openFormButton=document.querySelector('[data-open-form]');
@@ -155,3 +165,27 @@ function closeFormModal(){
 closeFormButton?.addEventListener('click',closeFormModal);
 formModal?.addEventListener('click',event=>{if(event.target===formModal)closeFormModal()});
 formModal?.addEventListener('close',()=>document.body.classList.remove('modal-open'));
+
+const weddingForm=document.querySelector('.wedding-form');
+const formError=document.querySelector('#form-error');
+const formSuccess=document.querySelector('#form-success');
+weddingForm?.addEventListener('submit',async event=>{
+  event.preventDefault();
+  const submitButton=weddingForm.querySelector('.form-submit');
+  submitButton.disabled=true;
+  formError.hidden=true;
+  try{
+    const response=await fetch('/api/confirmacion',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(Object.fromEntries(new FormData(weddingForm)))
+    });
+    if(!response.ok)throw new Error(response.status);
+    weddingForm.hidden=true;
+    formSuccess.hidden=false;
+  }catch{
+    formError.hidden=false;
+  }finally{
+    submitButton.disabled=false;
+  }
+});

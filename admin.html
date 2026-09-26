@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Respuestas · Boda Cris y Pela</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
+    <style>
+      :root{--paper:#f7f0e2;--green:#737b54;--dark:#536048;--line:rgba(115,123,84,.3)}
+      *{box-sizing:border-box}
+      body{margin:0;min-height:100vh;color:var(--dark);background:var(--paper);font:400 14px/1.5 "DM Sans",system-ui,sans-serif}
+      h1,h2{margin:0;font-family:"Cormorant Garamond",Georgia,serif;font-style:italic;font-weight:500}
+      button{font:inherit;cursor:pointer}
+      .login{min-height:100vh;display:grid;place-items:center;padding:24px}
+      .login form{width:min(360px,100%);padding:38px 32px;background:#faf5e9;border:1px solid var(--line);box-shadow:0 8px 22px rgba(76,67,48,.08)}
+      .login h1{margin-bottom:24px;font-size:36px;text-align:center}
+      label{display:block;margin-bottom:16px}
+      label span{display:block;margin-bottom:5px;font:italic 500 17px "Cormorant Garamond",Georgia,serif}
+      input{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:2px;color:var(--dark);background:#fffdf7;font:inherit}
+      input:focus{outline:2px solid var(--green);outline-offset:1px}
+      .primary{width:100%;padding:11px 20px;border:1px solid var(--green);border-radius:2px;color:var(--paper);background:var(--green);font:500 17px "Cormorant Garamond",Georgia,serif}
+      .secondary{padding:9px 18px;border:1px solid var(--green);border-radius:2px;color:var(--green);background:transparent;font:500 16px "Cormorant Garamond",Georgia,serif}
+      .primary:disabled,.secondary:disabled{opacity:.55;cursor:wait}
+      .error{min-height:1.5em;margin:12px 0 0;color:#9a4a3a;text-align:center}
+      .panel{padding:32px clamp(16px,4vw,48px)}
+      .panel-head{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;margin-bottom:24px}
+      .panel-head h1{font-size:40px}
+      .actions{display:flex;gap:10px;flex-wrap:wrap}
+      .actions .primary{width:auto}
+      .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:26px}
+      .stat{padding:14px 16px;background:#faf5e9;border:1px solid var(--line)}
+      .stat strong{display:block;font:500 30px/1.1 "Cormorant Garamond",Georgia,serif;color:var(--green)}
+      .stat span{font-size:12px}
+      .table-wrap{overflow-x:auto;background:#fffdf7;border:1px solid var(--line)}
+      table{width:100%;border-collapse:collapse;font-size:13px}
+      th,td{padding:9px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;white-space:nowrap}
+      td.long{min-width:200px;white-space:normal}
+      th{position:sticky;top:0;color:var(--paper);background:var(--green);font-weight:500}
+      tbody tr:nth-child(even){background:rgba(115,123,84,.05)}
+      .empty{padding:30px;text-align:center;font:italic 18px "Cormorant Garamond",Georgia,serif}
+    </style>
+  </head>
+  <body>
+    <main class="login" id="login-view">
+      <form id="login-form">
+        <h1>Respuestas</h1>
+        <label><span>Usuario</span><input name="user" autocomplete="username" required /></label>
+        <label><span>Contraseña</span><input name="password" type="password" autocomplete="current-password" required /></label>
+        <button class="primary" type="submit">Entrar</button>
+        <p class="error" id="login-error" role="alert"></p>
+      </form>
+    </main>
+
+    <main class="panel" id="panel-view" hidden>
+      <div class="panel-head">
+        <h1>Respuestas del formulario</h1>
+        <div class="actions">
+          <button class="primary" id="export" type="button">Exportar Excel</button>
+          <button class="secondary" id="refresh" type="button">Actualizar</button>
+          <button class="secondary" id="logout" type="button">Cerrar sesión</button>
+        </div>
+      </div>
+      <div class="stats" id="stats"></div>
+      <div class="table-wrap"><table id="table"></table></div>
+    </main>
+
+    <script>
+      const loginView = document.querySelector('#login-view');
+      const panelView = document.querySelector('#panel-view');
+      const loginError = document.querySelector('#login-error');
+      const exportButton = document.querySelector('#export');
+      const LONG_FIELDS = ['direccion', 'alergias', 'alergias-acompanante'];
+      let credentials = sessionStorage.getItem('boda-admin') || '';
+
+      const escapeHtml = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      const api = (query = '') => fetch(`/api/respuestas${query}`, { headers: { 'x-admin-auth': credentials } });
+
+      function showLogin(message = '') {
+        panelView.hidden = true;
+        loginView.hidden = false;
+        loginError.textContent = message;
+      }
+
+      function render({ columns, rows, summary }) {
+        const stats = [
+          [summary.respuestas, 'respuestas'],
+          [summary.personas, 'personas asisten (con acompañantes)'],
+          [summary.noAsisten, 'no asisten'],
+          [summary.idaGijon + ' / ' + summary.idaOviedo, 'bus de ida Gijón / Oviedo'],
+          [summary.vueltaGijon + ' / ' + summary.vueltaOviedo, 'bus de vuelta Gijón / Oviedo']
+        ];
+        document.querySelector('#stats').innerHTML = stats.map(([n, label]) => `<div class="stat"><strong>${n}</strong><span>${label}</span></div>`).join('');
+        document.querySelector('#table').innerHTML = rows.length
+          ? `<thead><tr>${columns.map(([, label]) => `<th>${label}</th>`).join('')}</tr></thead>
+             <tbody>${rows.map(row => `<tr>${columns.map(([key]) => `<td${LONG_FIELDS.includes(key) ? ' class="long"' : ''}>${escapeHtml(row[key])}</td>`).join('')}</tr>`).join('')}</tbody>`
+          : '<tbody><tr><td class="empty">Todavía no ha llegado ninguna respuesta.</td></tr></tbody>';
+        loginView.hidden = true;
+        panelView.hidden = false;
+      }
+
+      async function load() {
+        const res = await api();
+        if (res.status === 401) {
+          sessionStorage.removeItem('boda-admin');
+          credentials = '';
+          return showLogin('Usuario o contraseña incorrectos.');
+        }
+        if (!res.ok) return showLogin('No se han podido cargar las respuestas. Inténtalo más tarde.');
+        render(await res.json());
+      }
+
+      document.querySelector('#login-form').addEventListener('submit', async event => {
+        event.preventDefault();
+        const form = event.target;
+        const button = form.querySelector('button');
+        credentials = btoa(unescape(encodeURIComponent(`${form.user.value}:${form.password.value}`)));
+        sessionStorage.setItem('boda-admin', credentials);
+        button.disabled = true;
+        loginError.textContent = '';
+        await load();
+        button.disabled = false;
+        form.password.value = '';
+      });
+
+      document.querySelector('#refresh').addEventListener('click', load);
+
+      document.querySelector('#logout').addEventListener('click', () => {
+        sessionStorage.removeItem('boda-admin');
+        credentials = '';
+        showLogin();
+      });
+
+      exportButton.addEventListener('click', async () => {
+        exportButton.disabled = true;
+        const res = await api('?format=xlsx');
+        exportButton.disabled = false;
+        if (!res.ok) return alert('No se ha podido exportar el Excel.');
+        const url = URL.createObjectURL(await res.blob());
+        const link = Object.assign(document.createElement('a'), { href: url, download: `respuestas-boda-${new Date().toISOString().slice(0, 10)}.xlsx` });
+        link.click();
+        URL.revokeObjectURL(url);
+      });
+
+      if (credentials) load();
+    </script>
+  </body>
+</html>

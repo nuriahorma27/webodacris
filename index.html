@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&family=Italianno&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=save-the-date-23" />
+    <link rel="stylesheet" href="styles.css?v=save-the-date-24" />
   </head>
   <body>
     <div class="grain" aria-hidden="true"></div>
@@ -47,7 +47,7 @@
           <div class="event-image church"><picture><source media="(max-width: 760px)" srcset="assets/iglesia-acuarela-mobile.png" /><img src="assets/iglesia-acuarela.png" alt="Acuarela de la iglesia de San Julián de Somió" /></picture></div>
           <div class="event-copy">
             <header><span>01.</span><h2>Ceremonia</h2></header>
-            <p>Sábado · 13:00 h</p>
+            <p>13:00 h</p>
             <a href="https://maps.google.com/?q=Iglesia+de+San+Julian+de+Somio+Gijon" target="_blank" rel="noreferrer">Iglesia de San Julián de Somió<br />Gijón, Asturias</a>
           </div>
         </article>
@@ -55,7 +55,7 @@
           <div class="event-image venue"><picture><source media="(max-width: 760px)" srcset="assets/quinta-acuarela-mobile.png" /><img src="assets/quinta-acuarela.png" alt="Acuarela de La Quinta del Ynfanzón" /></picture></div>
           <div class="event-copy">
             <header><span>02.</span><h2>Celebración</h2></header>
-            <p>Sábado · Después de la ceremonia</p>
+            <p>Después de la ceremonia</p>
             <a href="https://maps.google.com/?q=La+Quinta+del+Ynfanzon+Gijon" target="_blank" rel="noreferrer">La Quinta del Ynfanzón<br />Gijón, Asturias</a>
           </div>
         </article>
@@ -69,7 +69,6 @@
             <button class="active" data-guide="comer"><span>01.</span>Para comer</button>
             <button data-guide="vino"><span>02.</span>Para tomar un vino</button>
             <button data-guide="hotels"><span>03.</span>Hoteles</button>
-            <button data-guide="hair"><span>04.</span>Peluquerías</button>
           </nav>
         </aside>
         <div class="guide-carousel-wrap reveal">
@@ -88,7 +87,7 @@
         </div>
         <div class="bus-route reveal">
           <article class="bus-stop">
-            <span>01 · Ida</span><h3>Hacia la celebración</h3><p>Habrá autobuses desde Gijón y desde Oviedo. Aún estamos concretando los horarios de salida.</p>
+            <span>01 · Ida</span><h3>Hacia la celebración</h3><p>Habrá autobuses desde el centro de Gijón y desde Oviedo. Aún estamos concretando los horarios de salida.</p>
           </article>
           <div class="bus-line" aria-hidden="true">
             <i></i>
@@ -96,7 +95,7 @@
             <i></i>
           </div>
           <article class="bus-stop">
-            <span>02 · Vuelta</span><h3>Regreso a Gijón</h3><p>También habrá vuelta a Gijón y a Oviedo. Podrás indicarnos tu opción en el formulario.</p>
+            <span>02 · Vuelta</span><h3>Regreso a casa</h3><p>Habrá vuelta al centro de Gijón y a Oviedo.</p>
           </article>
         </div>
       </section>
@@ -118,8 +117,7 @@
           <button class="form-close" type="button" data-close-form aria-label="Cerrar formulario">×</button>
           <p class="eyebrow">Confirmación de asistencia</p>
           <h2 id="form-modal-title">¿Nos acompañas?</h2>
-          <form class="wedding-form" name="confirmacion-boda" method="POST" data-netlify="true" netlify-honeypot="bot-field">
-            <input type="hidden" name="form-name" value="confirmacion-boda" />
+          <form class="wedding-form" name="confirmacion-boda" method="POST">
             <p class="sr-only"><label>No rellenes este campo: <input name="bot-field" /></label></p>
             <div class="form-progress" aria-label="Progreso del formulario"><span class="active">Datos personales</span><span>Alergias</span><span>Buses</span></div>
             <section class="form-step active" data-step="1">
@@ -143,6 +141,7 @@
               <div class="step-actions"><button class="form-back" type="button">Volver</button><button class="form-next" type="button">Continuar</button></div>
             </section>
             <section class="form-step" data-step="3">
+              <h4 class="bus-person-title companion-only" hidden>Tus buses</h4>
               <div class="bus-questions">
                 <div>
                   <fieldset><legend>¿Necesitas bus de ida?</legend><label><input type="radio" name="bus-ida" value="Sí" required /> Sí</label><label><input type="radio" name="bus-ida" value="No" required /> No</label></fieldset>
@@ -157,9 +156,24 @@
                   <fieldset class="conditional bus-location" id="bus-vuelta-location" hidden><legend>¿Dónde quieres bajarte?</legend><label><input type="radio" name="bus-vuelta-destino" value="Gijón" /> Gijón</label><label><input type="radio" name="bus-vuelta-destino" value="Oviedo" /> Oviedo</label></fieldset>
                 </div>
               </div>
+              <div class="conditional companion-only" id="companion-bus" hidden>
+                <h4 class="bus-person-title">Buses del acompañante</h4>
+                <div class="bus-questions">
+                  <div>
+                    <fieldset><legend>¿Necesita bus de ida?</legend><label><input type="radio" name="bus-ida-acompanante" value="Sí" /> Sí</label><label><input type="radio" name="bus-ida-acompanante" value="No" /> No</label></fieldset>
+                    <fieldset class="conditional bus-location" id="bus-ida-acompanante-location" hidden><legend>¿Desde dónde necesita el autobús?</legend><label><input type="radio" name="bus-ida-origen-acompanante" value="Gijón" /> Gijón</label><label><input type="radio" name="bus-ida-origen-acompanante" value="Oviedo" /> Oviedo</label></fieldset>
+                  </div>
+                  <div>
+                    <fieldset><legend>¿Necesita bus de vuelta?</legend><label><input type="radio" name="bus-vuelta-acompanante" value="Sí" /> Sí</label><label><input type="radio" name="bus-vuelta-acompanante" value="No" /> No</label></fieldset>
+                    <fieldset class="conditional bus-location" id="bus-vuelta-acompanante-location" hidden><legend>¿Dónde quiere bajarse?</legend><label><input type="radio" name="bus-vuelta-destino-acompanante" value="Gijón" /> Gijón</label><label><input type="radio" name="bus-vuelta-destino-acompanante" value="Oviedo" /> Oviedo</label></fieldset>
+                  </div>
+                </div>
+              </div>
+              <p class="form-error" id="form-error" role="alert" hidden>No hemos podido enviar tu confirmación. Inténtalo de nuevo en unos minutos.</p>
               <div class="step-actions"><button class="form-back" type="button">Volver</button><button class="form-submit" type="submit">Enviar confirmación</button></div>
             </section>
           </form>
+          <div class="form-success" id="form-success" hidden><h3>¡Gracias!</h3><p>Hemos recibido tu confirmación.</p></div>
         </div>
       </dialog>
 
@@ -180,8 +194,9 @@
           <image href="assets/logo-cp-display.jpg" width="1024" height="1536" filter="url(#white-monogram)" />
         </svg>
       </a>
+      <a href="admin.html" target="_blank" rel="noopener">Acceso novios</a>
       <a href="#inicio">Volver arriba ↑</a>
     </footer>
-    <script src="script.js"></script>
+    <script src="script.js?v=respuestas-1"></script>
   </body>
 </html>
