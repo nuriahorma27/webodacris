@@ -10,4 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Pedir a la web que envíe el Excel por email
-        run: curl -fsS -X POST "${{ vars.SITE_URL }}/api/resumen-semanal" -H "x-cron-secret: ${{ secrets.CRON_SECRET }}"
+        env:
+          SITE_URL: ${{ vars.SITE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl -fsS -X POST "$SITE_URL/api/resumen-semanal" -H "x-cron-secret: $CRON_SECRET"
