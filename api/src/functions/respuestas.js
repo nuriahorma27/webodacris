@@ -1,6 +1,6 @@
 // Devuelve las respuestas a la página privada (/admin.html), en JSON o como Excel.
 import { app } from '@azure/functions';
-import { COLUMNS, buildWorkbook, fetchRows, isAdmin, summarize } from '../lib/respuestas.js';
+import { PERSON_COLUMNS, buildWorkbook, fetchRows, isAdmin, summarize, toPeople } from '../lib/respuestas.js';
 
 app.http('respuestas', {
   methods: ['GET'],
@@ -23,7 +23,7 @@ app.http('respuestas', {
           }
         };
       }
-      return { jsonBody: { columns: COLUMNS, rows, summary: summarize(rows) }, headers: { 'Cache-Control': 'no-store' } };
+      return { jsonBody: { columns: PERSON_COLUMNS, rows: toPeople(rows), summary: summarize(rows) }, headers: { 'Cache-Control': 'no-store' } };
     } catch (error) {
       context.error(error);
       return { status: 500, jsonBody: { error: 'No se han podido cargar las respuestas.' } };

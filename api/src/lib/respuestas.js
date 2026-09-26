@@ -85,10 +85,45 @@ export function summarize(rows) {
   };
 }
 
+// Una fila por persona: el invitado y, si viene, su acompañante con la misma dirección.
+export const PERSON_COLUMNS = [
+  ['fecha', 'Fecha'],
+  ['tipo', 'Tipo'],
+  ['nombre', 'Nombre'],
+  ['apellidos', 'Apellidos'],
+  ['direccion', 'Dirección'],
+  ['asistencia', '¿Asiste?'],
+  ['acompanante-de', 'Acompañante de'],
+  ['alergias', 'Alergias'],
+  ['bus-ida', 'Bus ida'],
+  ['bus-ida-origen', 'Ida desde'],
+  ['bus-vuelta', 'Bus vuelta'],
+  ['bus-vuelta-destino', 'Vuelta a']
+];
+
+export function toPeople(rows) {
+  return rows.flatMap(row => {
+    const guest = {
+      fecha: row.fecha, tipo: 'Invitado', nombre: row.nombre, apellidos: row.apellidos, direccion: row.direccion,
+      asistencia: row.asistencia, 'acompanante-de': '', alergias: row.alergias,
+      'bus-ida': row['bus-ida'], 'bus-ida-origen': row['bus-ida-origen'],
+      'bus-vuelta': row['bus-vuelta'], 'bus-vuelta-destino': row['bus-vuelta-destino']
+    };
+    if (row.acompanante !== 'Sí') return [guest];
+    return [guest, {
+      fecha: row.fecha, tipo: 'Acompañante', nombre: row['nombre-acompanante'], apellidos: row['apellidos-acompanante'],
+      direccion: row.direccion, asistencia: row.asistencia, 'acompanante-de': `${row.nombre} ${row.apellidos}`,
+      alergias: row['alergias-acompanante'],
+      'bus-ida': row['bus-ida-acompanante'], 'bus-ida-origen': row['bus-ida-origen-acompanante'],
+      'bus-vuelta': row['bus-vuelta-acompanante'], 'bus-vuelta-destino': row['bus-vuelta-destino-acompanante']
+    }];
+  });
+}
+
 export function buildWorkbook(rows) {
-  const sheetRows = rows.map(row => Object.fromEntries(COLUMNS.map(([key, label]) => [label, row[key]])));
-  const sheet = XLSX.utils.json_to_sheet(sheetRows, { header: COLUMNS.map(([, label]) => label) });
-  sheet['!cols'] = COLUMNS.map(([, label]) => ({ wch: Math.max(12, label.length + 2) }));
+  const sheetRows = toPeople(rows).map(row => Object.fromEntries(PERSON_COLUMNS.map(([key, label]) => [label, row[key]])));
+  const sheet = XLSX.utils.json_to_sheet(sheetRows, { header: PERSON_COLUMNS.map(([, label]) => label) });
+  sheet['!cols'] = PERSON_COLUMNS.map(([, label]) => ({ wch: Math.max(12, label.length + 2) }));
   const book = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(book, sheet, 'Respuestas');
   return XLSX.write(book, { type: 'buffer', bookType: 'xlsx' });

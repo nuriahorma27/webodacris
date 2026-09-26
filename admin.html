@@ -79,7 +79,7 @@
       const panelView = document.querySelector('#panel-view');
       const loginError = document.querySelector('#login-error');
       const exportButton = document.querySelector('#export');
-      const LONG_FIELDS = ['direccion', 'alergias', 'alergias-acompanante'];
+      const LONG_FIELDS = ['direccion', 'alergias'];
       let credentials = sessionStorage.getItem('boda-admin') || '';
 
       const escapeHtml = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
