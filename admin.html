@@ -25,6 +25,10 @@
       .primary{width:100%;padding:11px 20px;border:1px solid var(--green);border-radius:2px;color:var(--paper);background:var(--green);font:500 17px "Cormorant Garamond",Georgia,serif}
       .secondary{padding:9px 18px;border:1px solid var(--green);border-radius:2px;color:var(--green);background:transparent;font:500 16px "Cormorant Garamond",Georgia,serif}
       .primary:disabled,.secondary:disabled{opacity:.55;cursor:wait}
+      .back{display:inline-block;color:var(--green);font:italic 500 17px "Cormorant Garamond",Georgia,serif;text-decoration:none;border-bottom:1px solid var(--line)}
+      .back:hover{border-color:var(--green)}
+      .login .back{display:block;width:fit-content;margin:18px auto 0}
+      .panel>.back{margin-bottom:18px}
       .error{min-height:1.5em;margin:12px 0 0;color:#9a4a3a;text-align:center}
       .panel{padding:32px clamp(16px,4vw,48px)}
       .panel-head{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;margin-bottom:24px}
@@ -52,10 +56,12 @@
         <label><span>Contraseña</span><input name="password" type="password" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" required /></label>
         <button class="primary" type="submit">Entrar</button>
         <p class="error" id="login-error" role="alert"></p>
+        <a class="back" href="/">← Volver a la web</a>
       </form>
     </main>
 
     <main class="panel" id="panel-view" hidden>
+      <a class="back" href="/">← Volver a la web</a>
       <div class="panel-head">
         <h1>Respuestas del formulario</h1>
         <div class="actions">
