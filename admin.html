@@ -46,6 +46,9 @@
       th{position:sticky;top:0;color:var(--paper);background:var(--green);font-weight:500}
       tbody tr:nth-child(even){background:rgba(115,123,84,.05)}
       .empty{padding:30px;text-align:center;font:italic 18px "Cormorant Garamond",Georgia,serif}
+      td.actions-cell{position:sticky;left:0;z-index:1;background:#fffdf7}
+      tbody tr:nth-child(even) td.actions-cell{background:#f8f5ec}
+      th:first-child{position:sticky;left:0;z-index:2}
       .delete{display:grid;place-items:center;width:32px;height:32px;padding:0;border:1px solid transparent;border-radius:3px;color:#9a4a3a;background:transparent}
       .delete:hover{border-color:rgba(154,74,58,.4);background:rgba(154,74,58,.08)}
       .delete svg{width:17px;height:17px}
@@ -120,8 +123,8 @@
         ];
         document.querySelector('#stats').innerHTML = stats.map(([n, label]) => `<div class="stat"><strong>${n}</strong><span>${label}</span></div>`).join('');
         document.querySelector('#table').innerHTML = rows.length
-          ? `<thead><tr>${columns.map(([, label]) => `<th>${label}</th>`).join('')}<th></th></tr></thead>
-             <tbody>${rows.map((row, i) => `<tr>${columns.map(([key]) => `<td${LONG_FIELDS.includes(key) ? ' class="long"' : ''}>${escapeHtml(row[key])}</td>`).join('')}<td class="actions-cell"><button class="delete" type="button" data-index="${i}" aria-label="Eliminar" title="Eliminar">${TRASH}</button></td></tr>`).join('')}</tbody>`
+          ? `<thead><tr><th></th>${columns.map(([, label]) => `<th>${label}</th>`).join('')}</tr></thead>
+             <tbody>${rows.map((row, i) => `<tr><td class="actions-cell"><button class="delete" type="button" data-index="${i}" aria-label="Eliminar" title="Eliminar">${TRASH}</button></td>${columns.map(([key]) => `<td${LONG_FIELDS.includes(key) ? ' class="long"' : ''}>${escapeHtml(row[key])}</td>`).join('')}</tr>`).join('')}</tbody>`
           : '<tbody><tr><td class="empty">Todavía no ha llegado ninguna respuesta.</td></tr></tbody>';
         loginView.hidden = true;
         panelView.hidden = false;
