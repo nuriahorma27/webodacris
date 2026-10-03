@@ -67,7 +67,20 @@ export async function fetchRows() {
   }
   return entities
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-    .map(entity => toRow(JSON.parse(entity.data), entity.createdAt));
+    .map(entity => ({ id: entity.rowKey, ...toRow(JSON.parse(entity.data), entity.createdAt) }));
+}
+
+const COMPANION_FIELDS = FORM_FIELDS.filter(key => key.endsWith('-acompanante'));
+
+// Borra una respuesta entera o, si persona es 'acompanante', solo los datos del acompañante.
+export async function deleteSubmission(id, persona) {
+  const client = table();
+  if (persona !== 'acompanante') return client.deleteEntity(PARTITION, id);
+  const entity = await client.getEntity(PARTITION, id);
+  const data = JSON.parse(entity.data);
+  for (const key of COMPANION_FIELDS) data[key] = '';
+  data.acompanante = 'No';
+  await client.updateEntity({ partitionKey: PARTITION, rowKey: id, createdAt: entity.createdAt, data: JSON.stringify(data) }, 'Replace');
 }
 
 export function summarize(rows) {
@@ -104,14 +117,14 @@ export const PERSON_COLUMNS = [
 export function toPeople(rows) {
   return rows.flatMap(row => {
     const guest = {
-      fecha: row.fecha, tipo: 'Invitado', nombre: row.nombre, apellidos: row.apellidos, direccion: row.direccion,
+      id: row.id, persona: 'invitado', fecha: row.fecha, tipo: 'Invitado', nombre: row.nombre, apellidos: row.apellidos, direccion: row.direccion,
       asistencia: row.asistencia, 'acompanante-de': '', alergias: row.alergias,
       'bus-ida': row['bus-ida'], 'bus-ida-origen': row['bus-ida-origen'],
       'bus-vuelta': row['bus-vuelta'], 'bus-vuelta-destino': row['bus-vuelta-destino']
     };
     if (row.acompanante !== 'Sí') return [guest];
     return [guest, {
-      fecha: row.fecha, tipo: 'Acompañante', nombre: row['nombre-acompanante'], apellidos: row['apellidos-acompanante'],
+      id: row.id, persona: 'acompanante', fecha: row.fecha, tipo: 'Acompañante', nombre: row['nombre-acompanante'], apellidos: row['apellidos-acompanante'],
       direccion: row.direccion, asistencia: row.asistencia, 'acompanante-de': `${row.nombre} ${row.apellidos}`,
       alergias: row['alergias-acompanante'],
       'bus-ida': row['bus-ida-acompanante'], 'bus-ida-origen': row['bus-ida-origen-acompanante'],

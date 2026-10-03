@@ -46,6 +46,16 @@
       th{position:sticky;top:0;color:var(--paper);background:var(--green);font-weight:500}
       tbody tr:nth-child(even){background:rgba(115,123,84,.05)}
       .empty{padding:30px;text-align:center;font:italic 18px "Cormorant Garamond",Georgia,serif}
+      .delete{display:grid;place-items:center;width:32px;height:32px;padding:0;border:1px solid transparent;border-radius:3px;color:#9a4a3a;background:transparent}
+      .delete:hover{border-color:rgba(154,74,58,.4);background:rgba(154,74,58,.08)}
+      .delete svg{width:17px;height:17px}
+      td.actions-cell{width:1%;padding:4px 8px;vertical-align:middle}
+      .confirm{width:min(400px,calc(100% - 32px));padding:28px 26px;border:1px solid var(--line);color:var(--dark);background:#faf5e9;box-shadow:0 12px 36px rgba(52,67,52,.18)}
+      .confirm::backdrop{background:rgba(52,67,52,.35)}
+      .confirm h2{margin-bottom:10px;font-size:28px}
+      .confirm p{margin:0 0 22px}
+      .confirm .buttons{display:flex;gap:10px;justify-content:flex-end}
+      .danger{padding:9px 18px;border:1px solid #9a4a3a;border-radius:2px;color:#fff;background:#9a4a3a;font:500 16px "Cormorant Garamond",Georgia,serif}
     </style>
   </head>
   <body>
@@ -72,6 +82,11 @@
       </div>
       <div class="stats" id="stats"></div>
       <div class="table-wrap"><table id="table"></table></div>
+      <dialog class="confirm" id="confirm">
+        <h2>¿Seguro que quieres eliminarlo?</h2>
+        <p id="confirm-text"></p>
+        <div class="buttons"><button class="secondary" id="confirm-cancel" type="button">Cancelar</button><button class="danger" id="confirm-ok" type="button">Eliminar</button></div>
+      </dialog>
     </main>
 
     <script>
@@ -81,6 +96,9 @@
       const exportButton = document.querySelector('#export');
       const LONG_FIELDS = ['direccion', 'alergias'];
       let credentials = sessionStorage.getItem('boda-admin') || '';
+      let currentRows = [];
+      let pendingDelete = null;
+      const TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/></svg>';
 
       const escapeHtml = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
       const api = (query = '') => fetch(`/api/respuestas${query}`, { headers: { 'x-admin-auth': credentials } });
@@ -92,6 +110,7 @@
       }
 
       function render({ columns, rows, summary }) {
+        currentRows = rows;
         const stats = [
           [summary.respuestas, 'respuestas'],
           [summary.personas, 'personas asisten (con acompañantes)'],
@@ -101,8 +120,8 @@
         ];
         document.querySelector('#stats').innerHTML = stats.map(([n, label]) => `<div class="stat"><strong>${n}</strong><span>${label}</span></div>`).join('');
         document.querySelector('#table').innerHTML = rows.length
-          ? `<thead><tr>${columns.map(([, label]) => `<th>${label}</th>`).join('')}</tr></thead>
-             <tbody>${rows.map(row => `<tr>${columns.map(([key]) => `<td${LONG_FIELDS.includes(key) ? ' class="long"' : ''}>${escapeHtml(row[key])}</td>`).join('')}</tr>`).join('')}</tbody>`
+          ? `<thead><tr>${columns.map(([, label]) => `<th>${label}</th>`).join('')}<th></th></tr></thead>
+             <tbody>${rows.map((row, i) => `<tr>${columns.map(([key]) => `<td${LONG_FIELDS.includes(key) ? ' class="long"' : ''}>${escapeHtml(row[key])}</td>`).join('')}<td class="actions-cell"><button class="delete" type="button" data-index="${i}" aria-label="Eliminar" title="Eliminar">${TRASH}</button></td></tr>`).join('')}</tbody>`
           : '<tbody><tr><td class="empty">Todavía no ha llegado ninguna respuesta.</td></tr></tbody>';
         loginView.hidden = true;
         panelView.hidden = false;
@@ -133,6 +152,32 @@
       });
 
       document.querySelector('#refresh').addEventListener('click', load);
+
+      const confirmDialog = document.querySelector('#confirm');
+      document.querySelector('#table').addEventListener('click', event => {
+        const button = event.target.closest('.delete');
+        if (!button) return;
+        const row = currentRows[button.dataset.index];
+        const name = `${row.nombre} ${row.apellidos}`.trim() || 'esta persona';
+        const companion = row.persona === 'invitado' && currentRows.find(r => r.id === row.id && r.persona === 'acompanante');
+        document.querySelector('#confirm-text').textContent = row.persona === 'acompanante'
+          ? `Se eliminará a ${name} como acompañante de ${row['acompanante-de']}. La respuesta de ${row['acompanante-de']} se mantiene.`
+          : companion
+            ? `Se eliminará la respuesta de ${name} y la de su acompañante, ${companion.nombre} ${companion.apellidos}.`
+            : `Se eliminará la respuesta de ${name}.`;
+        pendingDelete = row;
+        confirmDialog.showModal();
+      });
+      document.querySelector('#confirm-cancel').addEventListener('click', () => confirmDialog.close());
+      document.querySelector('#confirm-ok').addEventListener('click', async event => {
+        const button = event.currentTarget;
+        button.disabled = true;
+        const res = await fetch(`/api/respuestas/${pendingDelete.id}?persona=${pendingDelete.persona}`, { method: 'DELETE', headers: { 'x-admin-auth': credentials } });
+        button.disabled = false;
+        confirmDialog.close();
+        if (!res.ok && res.status !== 404) return alert('No se ha podido eliminar. Inténtalo de nuevo.');
+        load();
+      });
 
       document.querySelector('#logout').addEventListener('click', () => {
         sessionStorage.removeItem('boda-admin');
