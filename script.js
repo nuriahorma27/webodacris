@@ -67,8 +67,11 @@ document.addEventListener('click',async event=>{
     const field=Object.assign(document.createElement('textarea'),{value:code});
     document.body.append(field);field.select();document.execCommand('copy');field.remove();
   }
-  button.textContent='¡Copiado!';
-  setTimeout(()=>{button.textContent='Copiar'},2000);
+  const original=button.innerHTML;
+  button.innerHTML=button.classList.contains('copy-icon')
+    ?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>'
+    :'¡Copiado!';
+  setTimeout(()=>{button.innerHTML=original},2000);
 });
 document.querySelectorAll('[data-guide]').forEach(button=>button.addEventListener('click',()=>{
   document.querySelector('[data-guide].active')?.classList.remove('active');button.classList.add('active');renderGuide(button.dataset.guide);
