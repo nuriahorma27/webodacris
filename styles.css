@@ -380,3 +380,10 @@ html,body{max-width:100%;overflow-x:hidden}
 .form-success h3{margin:0 0 8px;font:italic 500 34px "Cormorant Garamond",Georgia,serif}
 .form-success p{margin:0;font:400 18px "Cormorant Garamond",Georgia,serif}
 .guide-card h4:first-child{margin-top:0}
+.guide-card .hotel-deal{align-self:flex-start;margin:0 0 12px;padding:5px 10px;color:#4e584b;background:#efe6d2;border:1px solid #e2d7bf;border-radius:3px;font-family:"Cormorant Garamond",Georgia,serif;font-size:16px;font-weight:600;line-height:1.3}
+.guide-card .hotel-details{display:grid;gap:9px;margin:0}
+.guide-card .hotel-details dt{color:#e9dfc8;font-family:"Cormorant Garamond",Georgia,serif;font-size:14px;font-style:italic;letter-spacing:.02em}
+.guide-card .hotel-details dd{margin:0;color:#fbf5e7;font-family:"Cormorant Garamond",Georgia,serif;font-size:17px;line-height:1.35}
+@media(max-width:720px){.guide-card .hotel-details dd{font-size:16px}}
+.guide-card .copy-code{margin-left:6px;padding:2px 10px;border:1px solid #efe6d2;border-radius:3px;color:#4e584b;background:#efe6d2;font:600 13px "Cormorant Garamond",Georgia,serif;vertical-align:1px;cursor:pointer;transition:background .2s,color .2s}
+.guide-card .copy-code:hover{color:#efe6d2;background:transparent}

@@ -37,11 +37,11 @@ const guideData = {
   comer: {eyebrow:'Dónde comer', title:'Nuestros favoritos', items:placesComer},
   vino: {eyebrow:'Para tomar un vino', title:'Bares y terrazas', items:placesVino},
   hotels: {eyebrow:'Dónde dormir', title:'Hoteles recomendados', items:[
-    {name:'Hotel Abba Playa Gijón',tags:[],text:'Tienes un 15 % de descuento sobre el precio del día en que reserves. Si lo haces por email o teléfono, di que vienes con el grupo «Invitados Boda Cristina y Pelayo»; si reservas en su web, usa el código <strong>CRISPE2027</strong>. Las condiciones de cancelación y depósito son las que tenga el hotel en ese momento.',address:'Paseo Dr. Fleming, 37',phone:'985 00 00 00',email:'playagijon@abbahoteles.com'},
-    {name:'Hotel Alcomar',tags:[],text:'Aún no han publicado sus precios para 2027; los pondremos aquí en cuanto nos los pasen.',address:'C. Cabrales, 24',phone:'985 35 70 11',email:'info@hotelalcomar.com'},
-    {name:'Hotel Zentral Gijón Rey Pelayo',tags:[],text:'Tendrás un 10 % de descuento con un código exclusivo para nuestros invitados. Nos lo van a enviar y lo compartiremos aquí en cuanto lo tengamos.',address:'Av. Torcuato Fernández Miranda, 26',phone:'985 19 98 00',email:'comercial@hotelzentralgijon.com'},
-    {name:'Hotel NH Gijón',tags:[],text:'Habitación doble a 275 € la noche; el desayuno se paga aparte, 15 € por persona. Reserva por email o teléfono diciendo que vienes a nuestra boda. Puedes cancelar sin coste hasta dos meses antes.',address:'Paseo Dr. Fleming, 71',phone:'985 19 57 55',email:'m.canon@nh-hotels.com'},
-    {name:'Parador de Gijón',tags:[],text:'Habitación doble a 212 € la noche (246 € con desayuno) e individual a 212 € (229 € con desayuno). Reserva por email o teléfono diciendo que vienes a nuestra boda. Te respetan el precio y puedes cancelar sin coste hasta dos meses antes.',address:'Av. Torcuato Fernández Miranda, 15',phone:'985 37 05 11',email:'gijon@parador.es'}
+    {name:'Hotel Abba Playa Gijón',tags:[],deal:'15 % de descuento sobre el precio del día que reserves',details:[['Email o teléfono','Di que vienes con el grupo «Invitados Boda Cristina y Pelayo»'],['Web','Usa el código <strong>CRISPE2027</strong>','CRISPE2027'],['Cancelación','Según las condiciones del hotel al reservar']],address:'Paseo Dr. Fleming, 37',phone:'985 00 00 00',email:'playagijon@abbahoteles.com'},
+    {name:'Hotel Alcomar',tags:[],deal:'Precios para 2027 pendientes',text:'Los pondremos aquí en cuanto nos los pasen.',address:'C. Cabrales, 24',phone:'985 35 70 11',email:'info@hotelalcomar.com'},
+    {name:'Hotel Zentral Gijón Rey Pelayo',tags:[],deal:'10 % de descuento',details:[['Código','Exclusivo para invitados; lo compartiremos aquí en cuanto nos lo envíen']],address:'Av. Torcuato Fernández Miranda, 26',phone:'985 19 98 00',email:'comercial@hotelzentralgijon.com'},
+    {name:'Hotel NH Gijón',tags:[],deal:'Habitación doble: 275 € / noche',details:[['Desayuno','15 € por persona'],['Email o teléfono','Di que vienes a nuestra boda'],['Cancelación','Gratis hasta dos meses antes']],address:'Paseo Dr. Fleming, 71',phone:'985 19 57 55',email:'m.canon@nh-hotels.com'},
+    {name:'Parador de Gijón',tags:[],deal:'Doble o individual: 212 € / noche',details:[['Con desayuno','Doble 246 €, individual 229 €'],['Email o teléfono','Di que vienes a nuestra boda'],['Cancelación','Gratis hasta dos meses antes, con el precio garantizado']],address:'Av. Torcuato Fernández Miranda, 15',phone:'985 37 05 11',email:'gijon@parador.es'}
   ]}
 };
 const guideCarousel=document.querySelector('#guide-carousel');
@@ -52,11 +52,24 @@ function renderGuide(category='comer'){
   document.querySelector('#guide-title').textContent=data.title;
   guideCarousel.innerHTML=data.items.map(item=>`<article class="guide-card">
     ${item.tags.length?`<div class="place-tags">${item.tags.map(tag=>`<span class="place-tag">${tag}</span>`).join('')}</div>`:''}
-    <h4>${item.name}</h4><p>${item.text}</p>${item.warning?`<p class="place-warning">⚠\uFE0E ${item.warning}</p>`:''}<address>${item.address}${item.phone?` · <a href="tel:${item.phone.replace(/[^+\d]/g,'')}">${item.phone}</a>`:''}${item.email?`<br /><a href="mailto:${item.email}">${item.email}</a>`:''}</address>
+    <h4>${item.name}</h4>${item.deal?`<p class="hotel-deal">${item.deal}</p>`:''}${item.text?`<p>${item.text}</p>`:''}${item.details?`<dl class="hotel-details">${item.details.map(([label,value,copy])=>`<div><dt>${label}</dt><dd>${value}${copy?` <button class="copy-code" type="button" data-copy="${copy}">Copiar</button>`:''}</dd></div>`).join('')}</dl>`:''}${item.warning?`<p class="place-warning">⚠\uFE0E ${item.warning}</p>`:''}<address>${item.address}${item.phone?` · <a href="tel:${item.phone.replace(/[^+\d]/g,'')}">${item.phone}</a>`:''}${item.email?`<br /><a href="mailto:${item.email}">${item.email}</a>`:''}</address>
   </article>`).join('');
   guideCarousel.scrollLeft=0;
 }
 renderGuide();
+guideCarousel?.addEventListener('click',async event=>{
+  const button=event.target.closest('.copy-code');
+  if(!button)return;
+  const code=button.dataset.copy;
+  try{
+    await navigator.clipboard.writeText(code);
+  }catch{
+    const field=Object.assign(document.createElement('textarea'),{value:code});
+    document.body.append(field);field.select();document.execCommand('copy');field.remove();
+  }
+  button.textContent='¡Copiado!';
+  setTimeout(()=>{button.textContent='Copiar'},2000);
+});
 document.querySelectorAll('[data-guide]').forEach(button=>button.addEventListener('click',()=>{
   document.querySelector('[data-guide].active')?.classList.remove('active');button.classList.add('active');renderGuide(button.dataset.guide);
 }));
