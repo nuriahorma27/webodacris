@@ -37,7 +37,11 @@ const guideData = {
   comer: {eyebrow:'Dónde comer', title:'Nuestros favoritos', items:placesComer},
   vino: {eyebrow:'Para tomar un vino', title:'Bares y terrazas', items:placesVino},
   hotels: {eyebrow:'Dónde dormir', title:'Hoteles recomendados', items:[
-    {name:'Selección próximamente',tags:['alojamiento'],text:'Estamos preparando opciones en el centro, cerca de la playa y bien comunicadas.',address:'Gijón',phone:''}
+    {name:'Hotel Abba Playa Gijón',tags:['15% descuento','playa'],text:'15% de descuento sobre la tarifa vigente al reservar. Por email o teléfono, indica el grupo «INVITADOS BODA CRISTINA Y PELAYO»; en su web, usa el código CRISPE2027.',address:'Paseo Dr. Fleming, 37',phone:'985 00 00 00',email:'playagijon@abbahoteles.com'},
+    {name:'Hotel Alcomar',tags:['centro','playa'],text:'Todavía no tienen las tarifas para 2027. Las añadiremos aquí en cuanto nos las envíen.',address:'C. Cabrales, 24',phone:'985 35 70 11',email:'info@hotelalcomar.com'},
+    {name:'Hotel Zentral Gijón Rey Pelayo',tags:['10% descuento','centro'],text:'10% de descuento con un código para invitados que compartiremos aquí en cuanto lo tengamos.',address:'Av. Torcuato Fernández Miranda, 26',phone:'985 19 98 00',email:'comercial@hotelzentralgijon.com'},
+    {name:'Hotel NH Gijón',tags:['tarifa boda','playa'],text:'Habitación doble: 275 € / noche (desayuno: 15 € / persona). Reserva por email o teléfono diciendo que vas a la boda. Cancelación sin gastos hasta 2 meses antes.',address:'Paseo Dr. Fleming, 71',phone:'985 19 57 55',email:'m.canon@nh-hotels.com'},
+    {name:'Parador de Gijón',tags:['tarifa boda','parque'],text:'Doble: 212 € / noche (con desayuno, 246 €). Individual: 212 € / noche (con desayuno, 229 €). Reserva por email o teléfono diciendo que vas a la boda. Tarifa y cancelación garantizadas hasta 2 meses antes.',address:'Av. Torcuato Fernández Miranda, 15',phone:'985 37 05 11',email:'gijon@parador.es'}
   ]}
 };
 const guideCarousel=document.querySelector('#guide-carousel');
@@ -48,7 +52,7 @@ function renderGuide(category='comer'){
   document.querySelector('#guide-title').textContent=data.title;
   guideCarousel.innerHTML=data.items.map(item=>`<article class="guide-card">
     <div class="place-tags">${item.tags.map(tag=>`<span class="place-tag">${tag}</span>`).join('')}</div>
-    <h4>${item.name}</h4><p>${item.text}</p>${item.warning?`<p class="place-warning">⚠ ${item.warning}</p>`:''}<address>${item.address}${item.phone?` · <a href="tel:${item.phone.replace(/[^+\d]/g,'')}">${item.phone}</a>`:''}</address>
+    <h4>${item.name}</h4><p>${item.text}</p>${item.warning?`<p class="place-warning">⚠\uFE0E ${item.warning}</p>`:''}<address>${item.address}${item.phone?` · <a href="tel:${item.phone.replace(/[^+\d]/g,'')}">${item.phone}</a>`:''}${item.email?`<br /><a href="mailto:${item.email}">${item.email}</a>`:''}</address>
   </article>`).join('');
   guideCarousel.scrollLeft=0;
 }
