@@ -18,8 +18,8 @@ app.http('resumen-semanal', {
       subject: `Resumen semanal de la boda · ${s.respuestas} respuestas`,
       html: `<div style="font-family:Georgia,serif;color:#3d4a3a;font-size:15px">
         <h2 style="font-weight:400;font-style:italic">Resumen a ${today}</h2>
-        <p>${s.respuestas} respuestas: ${s.asisten} asisten y ${s.noAsisten} no asisten.<br>
-        <strong>${s.personas} personas</strong> en total contando acompañantes.</p>
+        <p>${s.respuestas} formularios recibidos.<br>
+        <strong>${s.personas} personas asisten</strong> (contando acompañantes) y ${s.noAsisten} no asisten.</p>
         <p>Bus de ida: ${s.idaGijon} desde Gijón y ${s.idaOviedo} desde Oviedo.<br>
         Bus de vuelta: ${s.vueltaGijon} a Gijón y ${s.vueltaOviedo} a Oviedo.</p>
         <p>Tienes el Excel completo adjunto.</p>

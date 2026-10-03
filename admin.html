@@ -115,7 +115,7 @@
       function render({ columns, rows, summary }) {
         currentRows = rows;
         const stats = [
-          [summary.respuestas, 'respuestas'],
+          [summary.respuestas, 'formularios recibidos'],
           [summary.personas, 'personas asisten (con acompañantes)'],
           [summary.noAsisten, 'no asisten'],
           [summary.idaGijon + ' / ' + summary.idaOviedo, 'bus de ida Gijón / Oviedo'],
@@ -162,12 +162,10 @@
         if (!button) return;
         const row = currentRows[button.dataset.index];
         const name = `${row.nombre} ${row.apellidos}`.trim() || 'esta persona';
-        const companion = row.persona === 'invitado' && currentRows.find(r => r.id === row.id && r.persona === 'acompanante');
-        document.querySelector('#confirm-text').textContent = row.persona === 'acompanante'
-          ? `Se eliminará a ${name} como acompañante de ${row['acompanante-de']}. La respuesta de ${row['acompanante-de']} se mantiene.`
-          : companion
-            ? `Se eliminará la respuesta de ${name} y la de su acompañante, ${companion.nombre} ${companion.apellidos}.`
-            : `Se eliminará la respuesta de ${name}.`;
+        const other = currentRows.find(r => r.id === row.id && r.persona !== row.persona);
+        document.querySelector('#confirm-text').textContent = other
+          ? `Se eliminará solo a ${name}. ${other.nombre} ${other.apellidos} se mantiene.`
+          : `Se eliminará a ${name}.`;
         pendingDelete = row;
         confirmDialog.showModal();
       });

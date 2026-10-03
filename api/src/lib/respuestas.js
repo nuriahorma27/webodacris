@@ -54,6 +54,7 @@ export async function saveSubmission(data) {
 export function toRow(data, createdAt) {
   const row = { fecha: formatDate(createdAt) };
   for (const key of FORM_FIELDS) row[key] = data[key] || '';
+  row['invitado-eliminado'] = data['invitado-eliminado'] || '';
   return row;
 }
 
@@ -72,29 +73,34 @@ export async function fetchRows() {
 
 const COMPANION_FIELDS = FORM_FIELDS.filter(key => key.endsWith('-acompanante'));
 
-// Borra una respuesta entera o, si persona es 'acompanante', solo los datos del acompañante.
+// Borra solo a una persona (invitado o acompañante). Si ya no queda nadie, borra la respuesta entera.
 export async function deleteSubmission(id, persona) {
   const client = table();
-  if (persona !== 'acompanante') return client.deleteEntity(PARTITION, id);
   const entity = await client.getEntity(PARTITION, id);
   const data = JSON.parse(entity.data);
-  for (const key of COMPANION_FIELDS) data[key] = '';
-  data.acompanante = 'No';
+  if (persona === 'acompanante') {
+    for (const key of COMPANION_FIELDS) data[key] = '';
+    data.acompanante = 'No';
+  } else {
+    data['invitado-eliminado'] = 'Sí';
+  }
+  if (data['invitado-eliminado'] === 'Sí' && data.acompanante !== 'Sí') return client.deleteEntity(PARTITION, id);
   await client.updateEntity({ partitionKey: PARTITION, rowKey: id, createdAt: entity.createdAt, data: JSON.stringify(data) }, 'Replace');
 }
 
+// Cuenta personas (no formularios), para que cuadre con las filas del Excel.
 export function summarize(rows) {
-  const attending = rows.filter(r => r.asistencia === 'Sí');
-  const count = (field, value) => rows.filter(r => r[field] === value).length;
+  const people = toPeople(rows);
+  const count = (field, value) => people.filter(p => p[field] === value).length;
   return {
     respuestas: rows.length,
-    asisten: attending.length,
+    asisten: count('asistencia', 'Sí'),
     noAsisten: count('asistencia', 'No'),
-    personas: attending.length + attending.filter(r => r.acompanante === 'Sí').length,
-    idaGijon: count('bus-ida-origen', 'Gijón') + count('bus-ida-origen-acompanante', 'Gijón'),
-    idaOviedo: count('bus-ida-origen', 'Oviedo') + count('bus-ida-origen-acompanante', 'Oviedo'),
-    vueltaGijon: count('bus-vuelta-destino', 'Gijón') + count('bus-vuelta-destino-acompanante', 'Gijón'),
-    vueltaOviedo: count('bus-vuelta-destino', 'Oviedo') + count('bus-vuelta-destino-acompanante', 'Oviedo')
+    personas: count('asistencia', 'Sí'),
+    idaGijon: count('bus-ida-origen', 'Gijón'),
+    idaOviedo: count('bus-ida-origen', 'Oviedo'),
+    vueltaGijon: count('bus-vuelta-destino', 'Gijón'),
+    vueltaOviedo: count('bus-vuelta-destino', 'Oviedo')
   };
 }
 
@@ -122,8 +128,9 @@ export function toPeople(rows) {
       'bus-ida': row['bus-ida'], 'bus-ida-origen': row['bus-ida-origen'],
       'bus-vuelta': row['bus-vuelta'], 'bus-vuelta-destino': row['bus-vuelta-destino']
     };
-    if (row.acompanante !== 'Sí') return [guest];
-    return [guest, {
+    const people = row['invitado-eliminado'] === 'Sí' ? [] : [guest];
+    if (row.acompanante !== 'Sí') return people;
+    return [...people, {
       id: row.id, persona: 'acompanante', fecha: row.fecha, tipo: 'Acompañante', nombre: row['nombre-acompanante'], apellidos: row['apellidos-acompanante'],
       direccion: row.direccion, asistencia: row.asistencia, 'acompanante-de': `${row.nombre} ${row.apellidos}`,
       alergias: row['alergias-acompanante'],
