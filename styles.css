@@ -387,3 +387,4 @@ html,body{max-width:100%;overflow-x:hidden}
 @media(max-width:720px){.guide-card .hotel-details dd{font-size:16px}}
 .guide-card .copy-code{margin-left:6px;padding:2px 10px;border:1px solid #efe6d2;border-radius:3px;color:#4e584b;background:#efe6d2;font:600 13px "Cormorant Garamond",Georgia,serif;vertical-align:1px;cursor:pointer;transition:background .2s,color .2s}
 .guide-card .copy-code:hover{color:#efe6d2;background:transparent}
+.event-copy>a{text-decoration:none}
