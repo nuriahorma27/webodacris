@@ -57,7 +57,7 @@ function renderGuide(category='comer'){
   guideCarousel.scrollLeft=0;
 }
 renderGuide();
-guideCarousel?.addEventListener('click',async event=>{
+document.addEventListener('click',async event=>{
   const button=event.target.closest('.copy-code');
   if(!button)return;
   const code=button.dataset.copy;

@@ -388,3 +388,7 @@ html,body{max-width:100%;overflow-x:hidden}
 .guide-card .copy-code{margin-left:6px;padding:2px 10px;border:1px solid #efe6d2;border-radius:3px;color:#4e584b;background:#efe6d2;font:600 13px "Cormorant Garamond",Georgia,serif;vertical-align:1px;cursor:pointer;transition:background .2s,color .2s}
 .guide-card .copy-code:hover{color:#efe6d2;background:transparent}
 .event-copy>a{text-decoration:none}
+.iban{display:inline-flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:12px;padding:14px 20px;border:1px solid var(--line);background:rgba(255,252,244,.55)}
+.iban-number{color:var(--green);font:500 clamp(18px,2.4vw,24px) "Cormorant Garamond",Georgia,serif;letter-spacing:.06em;white-space:nowrap}
+.iban .copy-code{padding:5px 14px;border:1px solid var(--green);border-radius:2px;color:var(--paper);background:var(--green);font:500 15px "Cormorant Garamond",Georgia,serif;cursor:pointer;transition:background .2s,color .2s}
+.iban .copy-code:hover{color:var(--green);background:transparent}
