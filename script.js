@@ -37,11 +37,11 @@ const guideData = {
   comer: {eyebrow:'Dónde comer', title:'Nuestros favoritos', items:placesComer},
   vino: {eyebrow:'Para tomar un vino', title:'Bares y terrazas', items:placesVino},
   hotels: {eyebrow:'Dónde dormir', title:'Hoteles recomendados', items:[
-    {name:'Hotel Abba Playa Gijón',tags:[],deal:'15 % de descuento sobre el precio del día que reserves',details:[['Email o teléfono','Di que vienes con el grupo «Invitados Boda Cristina y Pelayo»'],['Web','Usa el código <strong>CRISPE2027</strong>','CRISPE2027'],['Cancelación','Según las condiciones del hotel al reservar']],address:'Paseo Dr. Fleming, 37',phone:'985 00 00 00',email:'playagijon@abbahoteles.com'},
+    {name:'Hotel Abba Playa Gijón',tags:[],deal:'15 % de descuento sobre el precio del día que reserves',details:[['Email o teléfono','Di que vienes con el grupo «Invitados Boda Cristina y Pelayo»'],['Web','Usa el código <strong>CRISPE2027</strong>','CRISPE2027'],['Cancelación y depósito','Se aplican las condiciones que tenga el hotel el día que hagas la reserva']],address:'Paseo Dr. Fleming, 37',phone:'985 00 00 00',email:'playagijon@abbahoteles.com'},
     {name:'Hotel Alcomar',tags:[],deal:'Precios para 2027 pendientes',text:'Los pondremos aquí en cuanto nos los pasen.',address:'C. Cabrales, 24',phone:'985 35 70 11',email:'info@hotelalcomar.com'},
     {name:'Hotel Zentral Gijón Rey Pelayo',tags:[],deal:'10 % de descuento',details:[['Código','Exclusivo para invitados; lo compartiremos aquí en cuanto nos lo envíen']],address:'Av. Torcuato Fernández Miranda, 26',phone:'985 19 98 00',email:'comercial@hotelzentralgijon.com'},
     {name:'Hotel NH Gijón',tags:[],deal:'Habitación doble: 275 € / noche',details:[['Desayuno','15 € por persona'],['Email o teléfono','Di que vienes a nuestra boda'],['Cancelación','Gratis hasta dos meses antes']],address:'Paseo Dr. Fleming, 71',phone:'985 19 57 55',email:'m.canon@nh-hotels.com'},
-    {name:'Parador de Gijón',tags:[],deal:'Doble o individual: 212 € / noche',details:[['Con desayuno','Doble 246 €, individual 229 €'],['Email o teléfono','Di que vienes a nuestra boda'],['Cancelación','Gratis hasta dos meses antes, con el precio garantizado']],address:'Av. Torcuato Fernández Miranda, 15',phone:'985 37 05 11',email:'gijon@parador.es'}
+    {name:'Parador de Gijón',tags:[],deal:'Tarifa para invitados de la boda',details:[['Habitación doble','212 € / noche · 246 € con desayuno'],['Habitación individual','212 € / noche · 229 € con desayuno'],['Email o teléfono','Di que vienes a nuestra boda'],['Cancelación','Gratis hasta dos meses antes, con el precio garantizado']],address:'Av. Torcuato Fernández Miranda, 15',phone:'985 37 05 11',email:'gijon@parador.es'}
   ]}
 };
 const guideCarousel=document.querySelector('#guide-carousel');
