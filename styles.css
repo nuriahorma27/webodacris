@@ -379,3 +379,4 @@ html,body{max-width:100%;overflow-x:hidden}
 .form-success{padding:30px 0 10px;text-align:center;color:var(--green)}
 .form-success h3{margin:0 0 8px;font:italic 500 34px "Cormorant Garamond",Georgia,serif}
 .form-success p{margin:0;font:400 18px "Cormorant Garamond",Georgia,serif}
+.guide-card h4:first-child{margin-top:0}
