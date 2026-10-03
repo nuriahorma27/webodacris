@@ -393,3 +393,4 @@ html,body{max-width:100%;overflow-x:hidden}
 .iban .copy-icon{display:grid;place-items:center;width:28px;height:28px;padding:0;border:0;border-radius:50%;color:var(--olive);background:transparent;cursor:pointer;transition:color .2s,background .2s}
 .iban .copy-icon:hover{color:var(--green);background:rgba(115,123,84,.1)}
 .iban .copy-icon svg{width:16px;height:16px}
+.iban-number a{color:inherit!important;text-decoration:none!important;pointer-events:none}
