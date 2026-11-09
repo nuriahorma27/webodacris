@@ -1,6 +1,6 @@
 # Web de la boda de Cris y Pela
 
-Sitio web estático para la boda de Cris y Pela, preparado para publicar en Netlify.
+Sitio web estático para la boda de Cris y Pela, publicado en Azure Static Web Apps.
 
 ## Desarrollo local
 
@@ -12,14 +12,9 @@ python3 -m http.server 4173
 
 Después abre `http://localhost:4173`.
 
-## Publicación en Netlify
+## Publicación
 
-1. Sube este repositorio a GitHub.
-2. En Netlify, selecciona **Add new site → Import an existing project**.
-3. Conecta GitHub y elige este repositorio.
-4. Netlify leerá automáticamente `netlify.toml`; no necesita comando de compilación y publicará la raíz del repositorio.
-
-Cada nuevo `push` a la rama `main` generará una nueva publicación.
+La web se publica en **Azure Static Web Apps**. Cada `push` a la rama `main` lanza el workflow `.github/workflows/azure-static-web-apps-*.yml`, que sube la raíz del repositorio (web) y la carpeta `api/` (funciones). No hay proceso de compilación.
 
 ## Respuestas del formulario (Azure)
 
@@ -54,3 +49,11 @@ Sin dominio verificado, Resend solo entrega emails a la dirección con la que se
 - `admin.html`: zona privada con las respuestas.
 - `api/`: funciones de Azure para guardar las respuestas, leerlas y enviar los emails.
 
+## Zona privada: gestión de la boda
+
+`/admin.html` incluye, además de las respuestas del formulario, las pestañas **Invitados, Mesas, Presupuesto, Proveedores y Tareas**. Los datos se guardan en la tabla `gestion` de Azure Table Storage (función `api/src/functions/gestion.js`) con la misma cadena de conexión.
+
+- **Invitados:** lista con filtros, importación/exportación de Excel, asociación con las respuestas del formulario y descarga de alergias.
+- **Mesas:** plano de cada mesa y asignación de invitados.
+- **Presupuesto:** partidas con pagos por mes; el aviso «Este mes toca pagar» sale en todas las pestañas.
+- **Proveedores y Tareas:** seguimiento de proveedores y lista de tareas por fases.
