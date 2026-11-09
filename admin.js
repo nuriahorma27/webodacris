@@ -895,10 +895,10 @@
     const pagado = contr.filter(p => p.pagado).reduce((s, p) => s + (Number(p.importe) || 0), 0);
     $('#tab-proveedores').innerHTML = `<div class="stats"><div class="stat"><strong>${all.length}</strong><span>proveedores</span></div><div class="stat"><strong>${contr.length}</strong><span>contratados</span></div><div class="stat"><strong>${eur(contr.reduce((s, p) => s + (Number(p.importe) || 0), 0))}</strong><span>importe contratado</span></div><div class="stat"><strong>${eur(pagado)}</strong><span>ya pagado</span></div></div>
       <div class="toolbar"><button class="primary" data-act="v-add">＋ Proveedor</button><span class="grow"></span><span class="muted">Pon la fecha de pago y avisará arriba cuando llegue ese mes. Los «Contratado» en Tareas aparecen aquí solos.</span></div>
-      <div class="table-wrap"><table class="edit"><thead><tr><th>Nombre</th><th>Categoría</th><th>Email</th><th>Teléfono</th><th>Estado</th><th>Importe</th><th>Fecha de pago</th><th>Pagado</th><th>Qué incluye / notas</th><th></th></tr></thead><tbody>
-      ${auto.map(p => `<tr class="auto${cls(p)}" data-auto="${esc(p.id)}"><td>${esc(p.nombre)}</td><td>${esc(p.categoria)}</td><td>${esc(p.email)}</td><td>${esc(p.telefono)}</td><td><span class="pill ok">Contratado</span></td><td>${eur(p.importe)}</td><td><input data-av="fechaPago" type="date" value="${esc(p.fechaPago || '')}" /></td><td class="center"><input data-av="pagado" type="checkbox" class="chk-big"${p.pagado ? ' checked' : ''} /></td><td>${esc(p.incluye)} <span class="muted">(desde la tarea «${esc(p.desde)}»)</span></td><td></td></tr>`).join('')}
-      ${manuales.map(p => `<tr data-id="${p.id}" class="${cls(p).trim()}"><td><input data-vf="nombre" value="${esc(p.nombre)}" /></td><td><input data-vf="categoria" value="${esc(p.categoria)}" /></td><td><input data-vf="email" type="email" value="${esc(p.email)}" /></td><td><input data-vf="telefono" type="tel" value="${esc(p.telefono)}" /></td><td><select data-vf="estado">${opts(ESTADOS_PROV, p.estado)}</select></td><td><input data-vf="importe" data-num type="number" step="any" value="${p.importe || ''}" class="w100" /></td><td><input data-vf="fechaPago" type="date" value="${esc(p.fechaPago || '')}" /></td><td class="center"><input data-vf="pagado" type="checkbox" class="chk-big"${p.pagado ? ' checked' : ''} /></td><td><input data-vf="incluye" value="${esc(p.incluye)}" /></td><td class="actions-cell"><button class="delete" data-act="v-del" aria-label="Eliminar">${TRASH}</button></td></tr>`).join('')}
-      ${all.length ? '' : '<tr><td class="empty" colspan="10">Aún no hay proveedores.</td></tr>'}</tbody></table></div>`;
+      <div class="table-wrap"><table class="edit"><thead><tr><th>Nombre</th><th>Estado</th><th>Importe</th><th class="th-pago">📅 Fecha de pago</th><th class="th-pago">Pagado</th><th>Categoría</th><th>Email</th><th>Teléfono</th><th>Qué incluye / notas</th><th></th></tr></thead><tbody>
+      ${auto.map(p => `<tr class="auto${cls(p)}" data-auto="${esc(p.id)}"><td>${esc(p.nombre)}</td><td><span class="pill ok">Contratado</span></td><td>${eur(p.importe)}</td><td class="pago"><input data-av="fechaPago" type="date" value="${esc(p.fechaPago || '')}" /></td><td class="center pago"><input data-av="pagado" type="checkbox" class="chk-big"${p.pagado ? ' checked' : ''} /></td><td>${esc(p.categoria)}</td><td>${esc(p.email)}</td><td>${esc(p.telefono)}</td><td>${esc(p.incluye)} <span class="muted">(desde la tarea «${esc(p.desde)}»)</span></td><td></td></tr>`).join('')}
+      ${manuales.map(p => `<tr data-id="${p.id}" class="${cls(p).trim()}"><td><input data-vf="nombre" value="${esc(p.nombre)}" /></td><td><select data-vf="estado">${opts(ESTADOS_PROV, p.estado)}</select></td><td><input data-vf="importe" data-num type="number" step="any" value="${p.importe || ''}" class="w100" /></td><td class="pago"><input data-vf="fechaPago" type="date" value="${esc(p.fechaPago || '')}" /></td><td class="center pago"><input data-vf="pagado" type="checkbox" class="chk-big"${p.pagado ? ' checked' : ''} /></td><td><input data-vf="categoria" value="${esc(p.categoria)}" /></td><td><input data-vf="email" type="email" value="${esc(p.email)}" /></td><td><input data-vf="telefono" type="tel" value="${esc(p.telefono)}" /></td><td><input data-vf="incluye" value="${esc(p.incluye)}" /></td><td class="actions-cell"><button class="delete" data-act="v-del" aria-label="Eliminar">${TRASH}</button></td></tr>`).join('')}
+      ${all.length ? '' : '<tr><td class="empty" colspan="10">Aún no hay proveedores. Pulsa «＋ Proveedor» para añadir el primero y ponle su fecha de pago.</td></tr>'}</tbody></table></div>`;
     renderAlerts();
   }
   async function proveedoresEvent(act, el, ev) {
@@ -917,7 +917,7 @@
   }
 
   // Vista móvil/tablet: cada fila de las tablas pasa a ser una tarjeta; aquí se etiquetan las celdas y se marcan las secundarias.
-  const PRIMARY = { 'tab-invitados': [0, 1, 2, 3, 4, 5], 'tab-proveedores': [0, 4, 5, 6, 7] };
+  const PRIMARY = { 'tab-invitados': [0, 1, 2, 3, 4, 5], 'tab-proveedores': [0, 1, 2, 3, 4] };
   function labelTables() {
     document.querySelectorAll('.tab:not([hidden]) table.edit').forEach(t => {
       const tabId = t.closest('.tab').id, prim = PRIMARY[tabId], heads = [...t.querySelectorAll('thead th')].map(th => th.textContent.replace('×', '').trim());
@@ -1033,7 +1033,7 @@
   /* ---------- modo tablet / modo ordenador (en pantallas táctiles) ---------- */
   (() => {
     const btn = $('#modo'); if (!btn) return;
-    const touch = window.matchMedia('(pointer: coarse)').matches || Math.min(screen.width, screen.height) <= 1100;
+    const touch = window.matchMedia('(pointer: coarse)').matches;   // solo pantallas táctiles (no ordenadores con ratón)
     if (!touch) return;
     let modo = 'tablet'; try { modo = localStorage.getItem('boda-modo') === 'ordenador' ? 'ordenador' : 'tablet'; } catch { /* sin almacenamiento */ }
     btn.hidden = false;

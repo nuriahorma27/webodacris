@@ -304,6 +304,9 @@
       html.touch .mcard.editing{box-shadow:0 0 0 2px var(--green)}
       html.touch .mcard header .edit-btn{margin-left:auto}
       @media(max-width:900px){html.touch table.edit td.actions-cell{display:flex;gap:6px;align-items:center}}
+      th.th-pago{background:#4a5a3d}
+      td.pago input[type=date]{min-width:150px;font-weight:600}
+      @media(max-width:900px){table.edit td.pago{background:rgba(196,214,160,.18)!important;border-radius:8px;padding:6px!important}}
       @media print{.mopts,.mfill,.x2,.seatbtn,.seg,.stepper{display:none!important}.mseats li{border:0;background:none;padding:2px 0}.mseats .sn{display:none}}
       @media print{.seat-print{display:block!important;visibility:visible}.alerg{display:none!important}.seats li{break-inside:avoid}}
       @media print{body *{visibility:hidden}#tab-mesas,#tab-mesas *{visibility:visible}#tab-mesas{position:absolute;left:0;top:0;width:100%}.toolbar,.assoc,.seats select{display:none!important}}
@@ -388,7 +391,7 @@
       </dialog>
     </main>
 
-    <script src="/gestion-data.js?v=30"></script>
-    <script src="/admin.js?v=30"></script>
+    <script src="/gestion-data.js?v=32"></script>
+    <script src="/admin.js?v=32"></script>
   </body>
 </html>
