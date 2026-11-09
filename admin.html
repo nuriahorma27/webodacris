@@ -128,7 +128,7 @@
       table.edit select{appearance:none;-webkit-appearance:none;border-radius:12px;padding:4px 10px;text-align:center;text-align-last:center;cursor:pointer;background-color:transparent}
       table.edit select[style]{border-color:rgba(83,96,72,.12)}
       table.edit .c-nombre{min-width:130px}table.edit .c-apellido{min-width:190px}
-      table.edit td:nth-child(n+3):nth-child(-n+6) select,table.edit td:nth-child(5) input{min-width:112px}
+      table.edit td:nth-child(n+3):nth-child(-n+7) select{min-width:112px}
       table.edit input[data-gf=subgrupo]{min-width:190px}
       table.edit th{padding:9px 10px;white-space:nowrap}
       table.edit tbody tr:hover{background:rgba(115,123,84,.09)}
@@ -166,9 +166,52 @@
       .toolbar{gap:8px 8px}
       .toolbar>input[type=search]{height:36px;border-radius:18px;padding:0 16px;width:min(260px,100%)}
       .mini:disabled{opacity:.4}
-      textarea.cell-text{display:block;width:100%;min-width:240px;max-width:420px;min-height:30px;resize:none;overflow:hidden;white-space:pre-wrap;word-break:break-word;line-height:1.35;padding:5px 8px;border:1px solid transparent;border-radius:4px;background:transparent;font:13px/1.35 "DM Sans",system-ui,sans-serif;color:var(--dark)}
+      .grow{display:grid;min-width:240px;max-width:420px}
+      .grow::after,.grow textarea.cell-text{grid-area:1/1;padding:5px 8px;border:1px solid transparent;border-radius:4px;font:13px/1.4 "DM Sans",system-ui,sans-serif;white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere}
+      .grow::after{content:attr(data-v) " ";visibility:hidden;min-height:30px}
+      textarea.cell-text{width:100%;height:100%;min-height:30px;resize:none;overflow:hidden;background:transparent;color:var(--dark);margin:0}
       textarea.cell-text:hover{border-color:var(--line)}textarea.cell-text:focus{background:#fffdf7;border-color:var(--green);outline:0}
       table.edit td{vertical-align:top}
+      .alerg{display:block;margin:3px 0 0 4px;padding:2px 9px;border-radius:10px;background:#f7e3c3;border:1px solid #dcc58f;color:#7a5a1f;font-size:12px;line-height:1.3}
+      .seats li{display:block}.seat-print{display:none}
+      .cards{grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:18px}
+      .mcard{padding:16px;background:#faf5e9;border:1px solid var(--line);border-radius:12px;box-shadow:0 2px 10px rgba(76,67,48,.05)}
+      .mcard.pres{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset}
+      .mcard header{display:flex;gap:10px;align-items:center;margin-bottom:12px}
+      .mnum{display:grid;place-items:center;flex:0 0 42px;height:42px;border-radius:50%;background:var(--green);color:var(--paper);font:italic 500 24px "Cormorant Garamond",Georgia,serif}
+      .mcard header input{flex:1;min-width:0;height:38px;padding:0 12px;border:1px solid transparent;border-radius:8px;background:transparent;font:italic 500 20px "Cormorant Garamond",Georgia,serif;color:var(--dark)}
+      .mcard header input:hover,.mcard header input:focus{background:#fffdf7;border-color:var(--line)}
+      .mopts{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+      .seg{display:inline-flex;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#fffdf7}
+      .seg button{padding:5px 12px;border:0;background:transparent;color:var(--dark);font:500 12.5px "DM Sans",sans-serif}.seg button.on{background:var(--green);color:var(--paper)}
+      .stepper{display:inline-flex;align-items:center;gap:2px;border:1px solid var(--line);border-radius:16px;background:#fffdf7}
+      .stepper button{width:28px;height:28px;border:0;border-radius:50%;background:transparent;color:var(--green);font-size:16px}.stepper span{padding:0 6px;font:500 12.5px "DM Sans",sans-serif}
+      .numlab{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;margin:0}.numlab input{width:56px;padding:4px 8px;border-radius:12px}
+      .chipbtn{padding:5px 12px;border:1px solid var(--line);border-radius:16px;background:#fffdf7;color:var(--dark);font:500 12.5px "DM Sans",sans-serif}.chipbtn.on{background:#f3ecb8;border-color:var(--gold)}
+      .mfill{display:flex;align-items:center;gap:10px;margin:0 0 6px;font-size:12.5px}.mfill .bar{flex:1;height:7px;border-radius:4px;background:rgba(115,123,84,.2);overflow:hidden}.mfill .bar i{display:block;height:100%;background:var(--green)}
+      .warn-t{color:#8a5a12;font-weight:600}
+      .mseats{margin:12px 0 0;padding:0;list-style:none;display:grid;gap:6px}
+      .mseats li{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:6px 8px;border:1px dashed var(--line);border-radius:10px;background:#fffdf7}
+      .mseats li.ocupada{border-style:solid;background:#eef2e4}
+      .mseats .sn{flex:0 0 24px;height:24px;display:grid;place-items:center;border-radius:50%;border:1px solid var(--green);font-size:11px;color:var(--green)}
+      .mseats li.ocupada .sn{background:var(--green);color:var(--paper)}
+      .seatbtn{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;padding:2px 4px;border:0;background:transparent;text-align:left;color:var(--dark);font:13.5px "DM Sans",sans-serif;cursor:pointer}
+      .seatbtn em{font-style:normal;font-size:11.5px;opacity:.7}.seatbtn .libre{opacity:.55}.seatbtn:hover strong,.seatbtn:hover .libre{text-decoration:underline}
+      .x2{border:0;background:transparent;color:#9a4a3a;font-size:18px;line-height:1;padding:0 4px}
+      .mseats .alerg{margin:0}
+      #seat-q{width:100%;height:40px;padding:0 14px;border-radius:20px;margin-bottom:8px}
+      .seat-opts{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;font-size:13px}.seat-opts .chk{display:flex;align-items:center;gap:6px;margin:0}.seat-opts input{width:auto}
+      #seat-list{max-height:52vh;overflow:auto;padding-right:4px;margin-bottom:14px}
+      dialog.form .buttons{display:flex;justify-content:flex-end;gap:10px}
+      dialog.form{width:min(560px,calc(100% - 24px))}
+      .sgroup{margin:0 0 14px}.sgroup h4{display:flex;justify-content:space-between;margin:0 0 6px;padding:5px 12px;border-radius:8px;font:600 13px "DM Sans",sans-serif;color:var(--dark)}.sgroup h4 span{font-weight:500;opacity:.65}
+      .sgroup h5{margin:8px 0 4px 4px;font:italic 500 16px "Cormorant Garamond",Georgia,serif;color:var(--green)}
+      .sguests{display:flex;flex-wrap:wrap;gap:6px}
+      .sguests button{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border:1px solid var(--line);border-radius:14px;background:#fffdf7;color:var(--dark);font:13px "DM Sans",sans-serif;cursor:pointer}
+      .sguests button:hover{background:var(--green);color:var(--paper);border-color:var(--green)}
+      .sguests i{font-style:normal;font-size:11px;opacity:.7}.sguests i.al{color:#8a5a12;opacity:1}.sguests i.in{background:#efe6d2;border-radius:8px;padding:0 6px;color:var(--dark)}
+      @media print{.mopts,.mfill,.x2,.seatbtn,.seg,.stepper{display:none!important}.mseats li{border:0;background:none;padding:2px 0}.mseats .sn{display:none}}
+      @media print{.seat-print{display:block!important;visibility:visible}.alerg{display:none!important}.seats li{break-inside:avoid}}
       @media print{body *{visibility:hidden}#tab-mesas,#tab-mesas *{visibility:visible}#tab-mesas{position:absolute;left:0;top:0;width:100%}.toolbar,.assoc,.seats select{display:none!important}}
     </style>
   </head>
@@ -240,9 +283,16 @@
           <div class="buttons"><button class="secondary" id="dlg-grupos-cancel" type="button">Cancelar</button><button class="primary" type="submit" style="width:auto">Guardar</button></div>
         </form>
       </dialog>
+    <dialog class="form" id="dlg-seat">
+        <h2 id="seat-title">Elegir invitado</h2>
+        <input id="seat-q" type="search" placeholder="Buscar por nombre, grupo o subgrupo…" autocomplete="off" />
+        <div class="seat-opts"><label class="chk"><input type="checkbox" id="seat-seated" /> <span id="seat-all-label">Mostrar también los ya colocados</span></label><span class="muted" id="seat-count"></span></div>
+        <div id="seat-list"></div>
+        <div class="buttons"><button class="secondary" id="seat-close" type="button">Cerrar</button></div>
+      </dialog>
     </main>
 
-    <script src="/gestion-data.js?v=10"></script>
-    <script src="/admin.js?v=10"></script>
+    <script src="/gestion-data.js?v=16"></script>
+    <script src="/admin.js?v=16"></script>
   </body>
 </html>

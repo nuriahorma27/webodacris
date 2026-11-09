@@ -57,7 +57,7 @@
       const limpios = d.grupos.filter(g => usados.has(g) || !ejemplo.includes(g));
       if (limpios.length !== d.grupos.length) { d.grupos = limpios; markDirty(name, true); }
     }
-    if (name === 'invitados' && fillSino(SEC[name].data)) markDirty(name, true);
+    if (name === 'invitados') { const d0 = SEC[name].data; const c1 = ensureBusCols(d0), c2 = fillSino(d0); if (c1 || c2) markDirty(name, true); }
     if (!data) markDirty(name);   // primera vez: guarda los valores de partida
     return SEC[name].data;
   }
@@ -79,10 +79,10 @@
   const TAB_SECTION = { invitados: 'invitados', mesas: 'mesas', presupuesto: 'presupuesto', proveedores: 'proveedores', tareas: 'tareas' };
   function updateUndoButtons() {
     const name = TAB_SECTION[current], h = name && HIST[name];
-    const u = $('#undo'), r = $('#redo'); if (!u) return;
+    const u = $('#undo'), r = $('#redo'); if (!u || !r) return;
     u.disabled = !h || !h.undo.length; r.disabled = !h || !h.redo.length;
     u.title = h?.undo.length ? `Deshacer (${h.undo.length})` : 'Nada que deshacer';
-    $('#undo-wrap').hidden = !name;
+    const w = $('#undo-wrap'); if (w) w.hidden = !name;
   }
   function restore(name, json) {
     SEC[name].data = { ...defaults[name](), ...JSON.parse(json) };
@@ -167,28 +167,47 @@
   const FIXED = { si: '#d6e8bd', no: '#f2d0c7', pendiente: '#f7e3c3', 'tal vez': '#f7e3c3', adulto: '#ebe5d3', nino: '#cfdcf2' };
   const hashIdx = v => { let h = 5381; for (const ch of norm(v)) h = ((h << 5) + h + ch.charCodeAt(0)) | 0; return Math.abs(h) % PALETTE.length; };
   const tint = (v, i) => { const k = norm(v); if (!k) return ''; return ` style="background:${FIXED[k] || PALETTE[i !== undefined && i >= 0 ? i % PALETTE.length : hashIdx(v)]}"`; };
-  const isFiltering = () => !!(guestFilter.q || guestFilter.grupo || guestFilter.subgrupo || guestFilter.viene || guestFilter.tipo);
+  const BUS = { bi: ['Bus ida', 'sino'], bid: ['Bus ida desde', 'lista'], bv: ['Bus vuelta', 'sino'], bva: ['Bus vuelta a', 'lista'] };
+  const colOf = (inv, name) => inv.columnas.find(c => norm(c.nombre) === norm(name));
+  const extraOf = (inv, g, name) => { const c = colOf(inv, name); return c ? (g.extra[c.id] ?? '') : ''; };
+  const mesaMap = () => { const m = new Map(); for (const t of SEC.mesas?.data.mesas || []) for (const id of t.invitados) if (id) m.set(id, t); return m; };
+  const mesaLabel = t => `Mesa ${t.numero}${t.nombre ? ' · ' + t.nombre : ''}`;
+  // Cómo se lee cada filtro en un invitado.
+  function fieldGetter(field) {
+    const inv = SEC.invitados.data;
+    if (field === 'mesa') { const mm = mesaMap(); return g => (mm.has(g.id) ? String(mm.get(g.id).numero) : 'sin'); }
+    if (BUS[field]) return g => extraOf(inv, g, BUS[field][0]);
+    return g => g[field];
+  }
+  const FILTER_KEYS = ['grupo', 'subgrupo', 'viene', 'tipo', 'bi', 'bid', 'bv', 'bva', 'mesa'];
+  const isFiltering = () => !!(guestFilter.q || FILTER_KEYS.some(k => guestFilter[k]));
   function filteredGuests(f = guestFilter) {
-    const q = norm(f.q);
-    return SEC.invitados.data.invitados.filter(g => (!q || norm(`${fullName(g)} ${g.grupo} ${g.subgrupo}`).includes(q)) && (!f.grupo || g.grupo === f.grupo) && (!f.subgrupo || g.subgrupo === f.subgrupo) && (!f.viene || g.viene === f.viene) && (!f.tipo || g.tipo === f.tipo));
+    const q = norm(f.q), getters = FILTER_KEYS.filter(k => f[k]).map(k => [k, fieldGetter(k)]);
+    return SEC.invitados.data.invitados.filter(g => (!q || norm(`${fullName(g)} ${g.grupo} ${g.subgrupo}`).includes(q)) && getters.every(([k, get]) => get(g) === f[k]));
   }
   // Valores que existen de verdad para un campo, con cuántos invitados hay en cada uno (según el resto de filtros).
   function facet(field) {
-    const counts = new Map();
-    for (const g of filteredGuests({ ...guestFilter, [field]: '' })) { const v = g[field]; if (v) counts.set(v, (counts.get(v) || 0) + 1); }
+    const counts = new Map(), get = fieldGetter(field);
+    for (const g of filteredGuests({ ...guestFilter, [field]: '' })) { const v = get(g); if (v) counts.set(v, (counts.get(v) || 0) + 1); }
     if (guestFilter[field] && !counts.has(guestFilter[field])) counts.set(guestFilter[field], 0);
     return counts;
   }
   function filtersHtml() {
-    const inv = SEC.invitados.data, chip = (k, v, n, color) => `<button class="fchip${guestFilter[k] === v ? ' on' : ''}" data-act="g-f" data-k="${k}" data-v="${esc(v)}"${color ? ` style="--c:${color}"` : ''}>${esc(v)} <b>${n}</b></button>`;
+    const inv = SEC.invitados.data, chip = (k, v, n, color, label) => `<button class="fchip${guestFilter[k] === v ? ' on' : ''}" data-act="g-f" data-k="${k}" data-v="${esc(v)}"${color ? ` style="--c:${color}"` : ''}>${esc(label ?? v)} <b>${n}</b></button>`;
     const ordered = (counts, pref) => [...counts.keys()].sort((x, y) => { const i = pref.indexOf(x), j = pref.indexOf(y); return (i < 0 ? 999 : i) - (j < 0 ? 999 : j) || x.localeCompare(y, 'es'); });
     const row = (label, html) => html ? `<div class="frow"><span class="flabel">${label}</span><div class="fchips">${html}</div></div>` : '';
     const v = facet('viene'), t = facet('tipo'), g = facet('grupo'), sg = facet('subgrupo');
     const allG = [...new Set(inv.invitados.map(x => x.grupo).filter(Boolean))];
+    const simple = (k, label, pref) => { const f = facet(k); return row(label, ordered(f, pref).map(x => chip(k, x, f.get(x), FIXED[norm(x)] || PALETTE[hashIdx(x)])).join('')); };
+    const mesas = SEC.mesas?.data.mesas || [], mf = facet('mesa');
+    const mesaChips = [...mf.keys()].sort((x, y) => (x === 'sin') - (y === 'sin') || Number(x) - Number(y)).map(x => { const t = mesas.find(m => String(m.numero) === x); return chip('mesa', x, mf.get(x), x === 'sin' ? '#efe6d2' : PALETTE[hashIdx(x)], x === 'sin' ? 'Sin mesa' : t ? mesaLabel(t) : `Mesa ${x}`); }).join('');
     return row('¿Viene?', ordered(v, ['Sí', 'Pendiente', 'No']).map(x => chip('viene', x, v.get(x), FIXED[norm(x)])).join(''))
       + row('Tipo', ordered(t, ['Adulto', 'Niño']).map(x => chip('tipo', x, t.get(x), FIXED[norm(x)])).join(''))
       + row('Grupo', ordered(g, allG).map(x => chip('grupo', x, g.get(x), PALETTE[Math.max(0, inv.grupos.indexOf(x)) % PALETTE.length])).join(''))
-      + row('Subgrupo', ordered(sg, []).map(x => chip('subgrupo', x, sg.get(x), PALETTE[hashIdx(x)])).join(''));
+      + row('Subgrupo', ordered(sg, []).map(x => chip('subgrupo', x, sg.get(x), PALETTE[hashIdx(x)])).join(''))
+      + simple('bi', 'Bus ida', ['Sí', 'No']) + simple('bid', 'Ida desde', ['Gijón', 'Oviedo'])
+      + simple('bv', 'Bus vuelta', ['Sí', 'No']) + simple('bva', 'Vuelta a', ['Gijón', 'Oviedo'])
+      + row('Mesa', mesaChips);
   }
   function guestStatsArr(shown) {
     const total = SEC.invitados.data.invitados.length, n = f => shown.filter(f).length;
@@ -203,16 +222,28 @@
   }
   function retint(el) {
     const v = el.value, inv = SEC.invitados.data;
-    const color = !v ? '' : el.dataset.gf === 'grupo' ? (FIXED[norm(v)] || PALETTE[Math.max(0, inv.grupos.indexOf(v)) % PALETTE.length]) : (FIXED[norm(v)] || PALETTE[hashIdx(v)]);
+    if (el.dataset.gx !== undefined && [...el.options].some(o => o.value === 'Sí')) { el.style.background = v === 'Sí' ? '#d6e8bd' : '#f0ece0'; return; }
+    const color = !v ? '' : el.dataset.gmesa !== undefined ? PALETTE[hashIdx(String(SEC.mesas.data.mesas.find(t => t.id === v)?.numero))] : el.dataset.gf === 'grupo' ? (FIXED[norm(v)] || PALETTE[Math.max(0, inv.grupos.indexOf(v)) % PALETTE.length]) : (FIXED[norm(v)] || PALETTE[hashIdx(v)]);
     el.style.background = color; if (!color) el.removeAttribute('style');
   }
   const ssGet = k => { try { return sessionStorage.getItem('boda-' + k); } catch { return null; } };
   const ssSet = (k, v) => { try { sessionStorage.setItem('boda-' + k, v); } catch { /* sin almacenamiento */ } };
-  document.addEventListener('toggle', e => { if (e.target.id === 'assoc-box') ssSet('assoc', e.target.open ? '1' : '0'); }, true);
-  const guestFilter = (() => { try { return { q: '', grupo: '', subgrupo: '', viene: '', tipo: '', ...JSON.parse(ssGet('filtros') || '{}') }; } catch { return { q: '', grupo: '', subgrupo: '', viene: '', tipo: '' }; } })();
+  document.addEventListener('toggle', e => { if (e.target.id === 'assoc-box') { ssSet('assoc', e.target.open ? '1' : '0'); if (e.target.open) renderAssoc(); } }, true);
+  const guestFilter = (() => { try { return { q: '', grupo: '', subgrupo: '', viene: '', tipo: '', bi: '', bid: '', bv: '', bva: '', mesa: '', ...JSON.parse(ssGet('filtros') || '{}') }; } catch { return { q: '', grupo: '', subgrupo: '', viene: '', tipo: '' }; } })();
   const saveFilters = () => ssSet('filtros', JSON.stringify(guestFilter));
   const fullName = g => `${g?.nombre || ''} ${g?.apellido || ''}`.trim();
 
+  // Columnas de autobús (del cuestionario): Sí/No y desde/hacia dónde.
+  function ensureBusCols(inv) {
+    let changed = false;
+    for (const [name, tipo] of [['Bus ida', 'sino'], ['Bus ida desde', 'lista'], ['Bus vuelta', 'sino'], ['Bus vuelta a', 'lista']]) {
+      let c = colOf(inv, name);
+      if (!c) { c = { id: uid(), nombre: name, tipo }; inv.columnas.push(c); changed = true; }
+      if (c.tipo !== tipo) { c.tipo = tipo; changed = true; }
+      if (tipo === 'lista' && !c.opciones) { c.opciones = 'Gijón,Oviedo'; changed = true; }
+    }
+    return changed;
+  }
   // Las columnas Sí/No nunca quedan vacías: lo que no tiene valor es «No».
   function fillSino(inv) {
     let changed = false;
@@ -249,11 +280,13 @@
     const subgrupos = [...new Set(list.map(g => g.subgrupo).filter(Boolean))].sort((x, y) => x.localeCompare(y, 'es'));
     const cell = (g, c) => {
       const v = g.extra[c.id] ?? '';
-      if (c.tipo === 'sino') return `<select data-gx="${c.id}"${tint(v || 'No')}>${opts(['Sí', 'No'], v || 'No')}</select>`;
+      if (c.tipo === 'sino') return `<select data-gx="${c.id}" style="background:${v === 'Sí' ? '#d6e8bd' : '#f0ece0'}">${opts(['Sí', 'No'], v || 'No')}</select>`;
       if (c.tipo === 'lista') return `<select data-gx="${c.id}"${tint(v)}>${opts((c.opciones || '').split(',').map(s => s.trim()).filter(Boolean), v, '—')}</select>`;
       if (c.tipo === 'numero') return `<input data-gx="${c.id}" type="number" value="${esc(v)}" />`;
-      return `<textarea class="cell-text" rows="1" data-gx="${c.id}" spellcheck="false">${esc(v)}</textarea>`;
+      return `<div class="grow" data-v="${esc(v)}"><textarea class="cell-text" rows="1" data-gx="${c.id}" spellcheck="false">${esc(v)}</textarea></div>`;
     };
+    const mm = mesaMap(), mesaList = [...(SEC.mesas?.data.mesas || [])].sort((x, y) => x.numero - y.numero);
+    const mesaOpts = cur => `<option value="">—</option>` + mesaList.map(t => `<option value="${t.id}"${cur && cur.id === t.id ? ' selected' : ''}>${esc(mesaLabel(t))}</option>`).join('');
     const pend = respData ? respData.rows.filter(r => !inv.vinculos[respKey(r)]).length : 0;
     $('#tab-invitados').innerHTML = `
       <div class="stats">${stats.map(([x, l]) => `<div class="stat"><strong>${x}</strong><span>${l}</span></div>`).join('')}</div>
@@ -266,22 +299,23 @@
         <button class="secondary" data-act="g-col">＋ Columna</button>
         <button class="secondary" data-act="g-grupos">Grupos</button>
         <label class="secondary filebtn">Importar Excel<input type="file" id="g-import" accept=".xlsx,.xls,.csv" hidden /></label>
+        <button class="secondary" data-act="alergias" title="Excel con las alergias, ordenadas por mesa">Descargar alergias</button>
         <button class="secondary" data-act="g-copy" title="Copia lo que ves en la tabla para pegarlo en Excel o Word">Copiar tabla</button>
         <button class="secondary" data-act="g-export">Exportar Excel</button>
       </div>
       <div class="filters" id="gfilters">${filtersHtml()}</div>
       <details class="assoc" id="assoc-box"${ssGet('assoc') === '1' ? ' open' : ''}><summary>Respuestas del cuestionario ${respData ? `· ${pend} sin asociar de ${respData.rows.length}` : ''}</summary><div id="assoc"></div></details>
-      <datalist id="dl-sub">${[...new Set(list.map(g => g.subgrupo).filter(Boolean))].sort().map(x => `<option value="${esc(x)}">`).join('')}</datalist><div class="table-wrap tall"><table class="edit"><thead><tr><th>Nombre</th><th>Apellido</th><th>¿Viene?</th><th>Grupo</th><th>Subgrupo</th><th>Tipo</th>${inv.columnas.map(c => `<th>${esc(c.nombre)} <button class="x" data-act="g-delcol" data-id="${c.id}" title="Quitar columna">×</button></th>`).join('')}<th>Cuestionario</th><th></th></tr></thead>
+      <datalist id="dl-sub">${[...new Set(list.map(g => g.subgrupo).filter(Boolean))].sort().map(x => `<option value="${esc(x)}">`).join('')}</datalist><div class="table-wrap tall"><table class="edit"><thead><tr><th>Nombre</th><th>Apellido</th><th>Mesa</th><th>¿Viene?</th><th>Grupo</th><th>Subgrupo</th><th>Tipo</th>${inv.columnas.map(c => `<th>${esc(c.nombre)} <button class="x" data-act="g-delcol" data-id="${c.id}" title="Quitar columna">×</button></th>`).join('')}<th>Cuestionario</th><th></th></tr></thead>
       <tbody>${shown.length ? shown.map(g => `<tr data-id="${g.id}">
         <td><input data-gf="nombre" class="c-nombre" value="${esc(g.nombre)}" /></td><td><input data-gf="apellido" class="c-apellido" value="${esc(g.apellido)}" /></td>
+        <td><select data-gmesa${tint(mm.has(g.id) ? mm.get(g.id).numero : '', mm.has(g.id) ? mm.get(g.id).numero - 1 : -1)}>${mesaOpts(mm.get(g.id))}</select></td>
         <td><select data-gf="viene"${tint(g.viene)}>${opts(VIENE, g.viene)}</select></td>
         <td><select data-gf="grupo"${tint(g.grupo, inv.grupos.indexOf(g.grupo))}>${opts(inv.grupos, g.grupo, '—')}</select></td><td><input data-gf="subgrupo" list="dl-sub" value="${esc(g.subgrupo)}"${tint(g.subgrupo)} /></td>
         <td><select data-gf="tipo"${tint(g.tipo)}>${opts(['Adulto', 'Niño'], g.tipo)}</select></td>
         ${inv.columnas.map(c => `<td>${cell(g, c)}</td>`).join('')}
         <td class="center">${vinculado.has(g.id) ? '<span class="pill ok">✓ asociado</span>' : '<span class="pill">—</span>'}</td>
-        <td class="actions-cell"><button class="delete" data-act="g-del" data-id="${g.id}" aria-label="Eliminar">${TRASH}</button></td></tr>`).join('') : `<tr><td class="empty" colspan="${8 + inv.columnas.length}">${list.length ? 'Ningún invitado coincide con el filtro.' : 'Aún no hay invitados. Añádelos, impórtalos desde Excel o asócialos desde el cuestionario.'}</td></tr>`}</tbody></table></div>`;
-    renderAssoc();
-    autosize($('#tab-invitados'));
+        <td class="actions-cell"><button class="delete" data-act="g-del" data-id="${g.id}" aria-label="Eliminar">${TRASH}</button></td></tr>`).join('') : `<tr><td class="empty" colspan="${9 + inv.columnas.length}">${list.length ? 'Ningún invitado coincide con el filtro.' : 'Aún no hay invitados. Añádelos, impórtalos desde Excel o asócialos desde el cuestionario.'}</td></tr>`}</tbody></table></div>`;
+    if (ssGet('assoc') === '1') renderAssoc();
   }
 
   let assocFilter = 'review';
@@ -294,14 +328,13 @@
     const info = respData.rows.map(r => { const k = respKey(r), linked = byId[inv.vinculos[k]]; return { r, k, linked, sug: !linked && suggestGuest(inv, r) }; });
     const nLinked = info.filter(i => i.linked).length, nReview = info.length - nLinked, nSug = info.filter(i => i.sug).length;
     const list = info.filter(i => assocFilter === 'all' || (assocFilter === 'linked' ? i.linked : !i.linked));
-    const guestOpts = `<option value="">Elegir invitado…</option>` + [...inv.invitados].sort((x, y) => fullName(x).localeCompare(fullName(y), 'es')).map(g => `<option value="${g.id}">${esc(fullName(g) || '(sin nombre)')}</option>`).join('');
     const row = ({ r, k, linked, sug }) => {
       const name = `${r.nombre} ${r.apellidos}`.trim() || '(sin nombre)';
       const ini = ((r.nombre || '?')[0] + (r.apellidos || '')[0]).toUpperCase().replace(/UNDEFINED/g, '');
       let st;
-      if (linked) st = `<span class="pill ok">✓ ${esc(fullName(linked))}</span><button class="mini ghost" data-act="a-unlink" data-k="${esc(k)}">Desasociar</button>`;
-      else if (sug) st = `<span class="sug">¿Es <b>${esc(fullName(sug))}</b>?</span><button class="mini solid" data-act="a-accept" data-k="${esc(k)}" data-g="${sug.id}">Sí, asociar</button><select class="mini" data-assoc="${esc(k)}" aria-label="Elegir otro invitado">${guestOpts.replace('Elegir invitado…', 'Es otra persona…')}</select>`;
-      else st = `<span class="sug none">Sin coincidencia</span><select class="mini" data-assoc="${esc(k)}">${guestOpts}</select><button class="mini" data-act="a-create" data-k="${esc(k)}">＋ Crear invitado</button>`;
+      if (linked) st = `<span class="pill ok">✓ ${esc(fullName(linked))}</span><button class="mini" data-act="a-pick" data-k="${esc(k)}">Cambiar</button><button class="mini ghost" data-act="a-unlink" data-k="${esc(k)}">Desasociar</button>`;
+      else if (sug) st = `<span class="sug">¿Es <b>${esc(fullName(sug))}</b>?</span><button class="mini solid" data-act="a-accept" data-k="${esc(k)}" data-g="${sug.id}">Sí, asociar</button><button class="mini" data-act="a-pick" data-k="${esc(k)}">Es otra persona…</button>`;
+      else st = `<span class="sug none">Sin coincidencia</span><button class="mini" data-act="a-pick" data-k="${esc(k)}">Buscar invitado…</button><button class="mini" data-act="a-create" data-k="${esc(k)}">＋ Crear invitado</button>`;
       return `<div class="assoc-row${linked ? ' is-linked' : ''}"><span class="avatar" style="background:${PALETTE[hashIdx(name)]}">${esc(ini)}</span><div class="who"><strong>${esc(name)}</strong><small>${esc(r.tipo)}${r.asistencia ? ` · <span class="pill ${r.asistencia === 'Sí' ? 'ok' : 'no'}">${r.asistencia === 'Sí' ? 'Asiste' : 'No asiste'}</span>` : ''}</small></div><div class="st">${st}</div></div>`;
     };
     const chip = (v, label, n) => `<button class="chip${assocFilter === v ? ' on' : ''}" data-act="a-filter" data-v="${v}">${label} <b>${n}</b></button>`;
@@ -327,7 +360,7 @@
   }
   const yesNo = v => { const x = norm(v); return x === 'si' ? 'Sí' : x === 'no' ? 'No' : String(v).trim(); };
   // Columnas conocidas del Excel de invitados -> columna de la ficha (tipo).
-  const IMPORT_COLS = { 'direccion': ['Dirección', 'texto'], 'observaciones': ['Notas', 'texto'], 'alergias': ['Alergias', 'texto'], 'invitacion': ['Invitación entregada', 'sino'], 'regalo': ['Regalo', 'sino'], 'cantidad (regalo)': ['Cantidad (regalo)', 'numero'], 'agradecimientos': ['Agradecimiento enviado', 'sino'], 'agradecimiento': ['Agradecimiento enviado', 'sino'], 'bus ida': ['Bus ida', 'texto'], 'bus vuelta': ['Bus vuelta', 'texto'], 'hora vuelta': ['Hora bus vuelta', 'texto'], 'hora ida': ['Hora bus ida', 'texto'], 'alojamiento': ['Alojamiento', 'texto'], 'menu': ['Menú', 'texto'], 'notas': ['Notas', 'texto'] };
+  const IMPORT_COLS = { 'direccion': ['Dirección', 'texto'], 'observaciones': ['Notas', 'texto'], 'alergias': ['Alergias', 'texto'], 'invitacion': ['Invitación entregada', 'sino'], 'regalo': ['Regalo', 'sino'], 'cantidad (regalo)': ['Cantidad (regalo)', 'numero'], 'agradecimientos': ['Agradecimiento enviado', 'sino'], 'agradecimiento': ['Agradecimiento enviado', 'sino'], 'bus ida': ['Bus ida', 'sino'], 'bus vuelta': ['Bus vuelta', 'sino'], 'bus ida desde': ['Bus ida desde', 'lista'], 'ida desde': ['Bus ida desde', 'lista'], 'bus vuelta a': ['Bus vuelta a', 'lista'], 'vuelta a': ['Bus vuelta a', 'lista'], 'hora vuelta': ['Hora bus vuelta', 'texto'], 'hora ida': ['Hora bus ida', 'texto'], 'alojamiento': ['Alojamiento', 'texto'], 'menu': ['Menú', 'texto'], 'notas': ['Notas', 'texto'] };
   const IGNORE_COLS = new Set(['mesas', 'mesa', '']);
   const setNote = (g, inv, text) => { const id = ensureCol(inv, 'Notas', 'texto'); g.extra[id] = g.extra[id] ? `${g.extra[id]} · ${text}` : text; };
   function autosize(root = document) {
@@ -350,6 +383,7 @@
     const inv = SEC.invitados.data;
     if (inv.invitados.length && await ask(`Ya hay ${inv.invitados.length} invitados en la lista. ¿Quieres sustituirlos por los del Excel? (Si no, se cancela la importación y no cambia nada.)`, 'Sustituir')) { inv.invitados = []; inv.vinculos = {}; }
     else if (inv.invitados.length) return;
+    ensureBusCols(inv);
     if (!inv.invitados.length) inv.grupos = [];   // los grupos de la lista sustituyen a los de ejemplo
     const K = g => `${norm(g.nombre)}|${norm(g.apellido)}|${norm(g.grupo)}|${norm(g.subgrupo)}`;
     const seen = new Set(inv.invitados.map(K));
@@ -369,7 +403,7 @@
       inv.invitados.push(g); added++;
       if (g.grupo && !inv.grupos.includes(g.grupo)) inv.grupos.push(g.grupo);
     }
-    fillSino(inv); markDirty('invitados'); renderInvitados(); alert(`Se han añadido ${added} invitados.${skipped ? ` Se han omitido ${skipped} (ya estaban).` : ''}`);
+    ensureBusCols(inv); fillSino(inv); markDirty('invitados'); renderInvitados(); alert(`Se han añadido ${added} invitados.${skipped ? ` Se han omitido ${skipped} (ya estaban).` : ''}`);
   }
   let excelJsPromise;
   const getExcelJS = () => excelJsPromise || (excelJsPromise = new Promise((res, rej) => {
@@ -409,6 +443,32 @@
     download(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), `LISTA_INVITADOS_${new Date().toISOString().slice(0, 10)}.xlsx`);
   }
 
+  // Alergias: la columna «Alergias» (o «Intolerancias») de la ficha; se ignoran respuestas tipo «no», «ninguna»…
+  const sinAlergia = v => { const t = String(v ?? '').trim().replace(/[.!]+$/, '').toLowerCase(); return !t || /^(no|-{1,}|n\/a|na|ninguna?|ningún|ninguno|nada|sin|ok|correcto|todo bien)$/.test(t) || /^(sin |no tengo|no hay|ninguna? )/.test(t); };
+  function alergiaDe(g) {
+    const inv = SEC.invitados.data;
+    for (const c of inv.columnas) if (/alergia|intoleranc/i.test(c.nombre)) { const v = g.extra[c.id]; if (!sinAlergia(v)) return String(v).trim(); }
+    return '';
+  }
+  async function descargarAlergias() {
+    const E = await getExcelJS(), inv = SEC.invitados.data, mm = mesaMap();
+    const filas = inv.invitados.map(g => ({ mesa: mm.get(g.id), nombre: fullName(g), grupo: g.grupo, alergia: alergiaDe(g) })).filter(f => f.alergia)
+      .sort((a, b) => (a.mesa ? a.mesa.numero : 1e9) - (b.mesa ? b.mesa.numero : 1e9) || a.nombre.localeCompare(b.nombre, 'es'));
+    const wb = new E.Workbook(), ws = wb.addWorksheet('Alergias', { views: [{ state: 'frozen', ySplit: 5 }], pageSetup: { fitToPage: true, fitToWidth: 1, orientation: 'portrait' } });
+    const heads = ['Mesa', 'Invitado', 'Grupo', 'Alergia / intolerancia'], TINTA = 'FF536048', LINEA = 'FFD9D2BE', thin = { style: 'thin', color: { argb: LINEA } }, borde = { top: thin, left: thin, bottom: thin, right: thin };
+    ws.columns = [{ width: 22 }, { width: 32 }, { width: 22 }, { width: 46 }];
+    ws.mergeCells('A1:D1'); Object.assign(ws.getCell('A1'), { value: 'Boda Cris y Pela' }); ws.getCell('A1').font = { name: 'Georgia', size: 20, bold: true, color: { argb: 'FFB28A51' } }; ws.getRow(1).height = 30;
+    ws.mergeCells('A2:D2'); ws.getCell('A2').value = 'Listado de alergias e intolerancias'; ws.getCell('A2').font = { size: 14, bold: true, color: { argb: TINTA } };
+    ws.mergeCells('A3:D3'); ws.getCell('A3').value = 'Sábado, 24 de julio de 2027'; ws.getCell('A3').font = { size: 10, color: { argb: 'FF7A736A' } };
+    const head = ws.getRow(5); head.values = heads; head.font = { bold: true, color: { argb: 'FFFFFFFF' } }; head.height = 20;
+    heads.forEach((_, i) => { const c = head.getCell(i + 1); c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: TINTA } }; c.border = borde; });
+    filas.forEach((f, i) => {
+      const row = ws.getRow(6 + i); row.values = [f.mesa ? mesaLabel(f.mesa) : 'Sin mesa', f.nombre, f.grupo, f.alergia];
+      for (let c = 1; c <= 4; c++) row.getCell(c).border = borde; row.getCell(4).alignment = { wrapText: true, vertical: 'top' };
+    });
+    if (!filas.length) ws.getCell('A6').value = 'Todavía no hay alergias registradas.';
+    download(new Blob([await wb.xlsx.writeBuffer()], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), `Alergias_boda_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  }
   const colDialog = $('#dlg-col');
   $('#dlg-col-name').innerHTML = SUGERIDAS.map(([n]) => `<option value="${esc(n)}">`).join('');
   $('#dlg-col-form').onsubmit = e => {
@@ -431,12 +491,13 @@
   async function invitadosClick(act, el) {
     const inv = SEC.invitados.data;
     if (act === 'g-add') { inv.invitados.push(newGuest()); fillSino(inv); markDirty('invitados'); renderInvitados(); const rows = document.querySelectorAll('#tab-invitados tbody tr'); rows[rows.length - 1]?.querySelector('input')?.focus(); }
-    else if (act === 'g-del') { const g = inv.invitados.find(g => g.id === el.dataset.id); if (await ask(`Se eliminará a ${fullName(g) || 'este invitado'}.`)) { inv.invitados = inv.invitados.filter(x => x.id !== g.id); for (const k of Object.keys(inv.vinculos)) if (inv.vinculos[k] === g.id) delete inv.vinculos[k]; markDirty('invitados'); renderInvitados(); } }
+    else if (act === 'g-del') { const g = inv.invitados.find(g => g.id === el.dataset.id); if (await ask(`Se eliminará a ${fullName(g) || 'este invitado'}.`)) { inv.invitados = inv.invitados.filter(x => x.id !== g.id); SEC.mesas.data.mesas.forEach(t => { t.invitados = t.invitados.map(x => (x === g.id ? '' : x)); }); markDirty('mesas'); for (const k of Object.keys(inv.vinculos)) if (inv.vinculos[k] === g.id) delete inv.vinculos[k]; markDirty('invitados'); renderInvitados(); } }
     else if (act === 'g-f') { const k = el.dataset.k; guestFilter[k] = guestFilter[k] === el.dataset.v ? '' : el.dataset.v; if (k === 'grupo' && guestFilter.subgrupo && !inv.invitados.some(g => g.grupo === guestFilter.grupo && g.subgrupo === guestFilter.subgrupo) && guestFilter.grupo) guestFilter.subgrupo = ''; renderInvitados(); }
-    else if (act === 'g-clear') { Object.assign(guestFilter, { q: '', grupo: '', subgrupo: '', viene: '', tipo: '' }); renderInvitados(); }
+    else if (act === 'g-clear') { Object.assign(guestFilter, { q: '', grupo: '', subgrupo: '', viene: '', tipo: '', bi: '', bid: '', bv: '', bva: '', mesa: '' }); renderInvitados(); }
     else if (act === 'g-col') colDialog.showModal();
     else if (act === 'g-delcol') { const c = inv.columnas.find(c => c.id === el.dataset.id); if (await ask(`Se quitará la columna «${c.nombre}» con todos sus datos.`, 'Quitar')) { inv.columnas = inv.columnas.filter(x => x.id !== c.id); inv.invitados.forEach(g => delete g.extra[c.id]); markDirty('invitados'); renderInvitados(); } }
     else if (act === 'g-grupos') { $('#dlg-grupos-form').grupos.value = inv.grupos.join('\n'); gruposDialog.showModal(); }
+    else if (act === 'alergias') descargarAlergias().catch(e => alert(e.message));
     else if (act === 'g-copy') {
       const cols = inv.columnas, rows = filteredGuests();
       const head = ['Nombre', 'Apellido', '¿Viene?', 'Grupo', 'Subgrupo', 'Tipo', ...cols.map(c => c.nombre)];
@@ -445,6 +506,12 @@
       try { await navigator.clipboard.writeText(tsv); setSave(`Copiadas ${rows.length} filas ✓`); } catch { prompt('Copia con Ctrl+C:', tsv.slice(0, 20000)); }
     }
     else if (act === 'g-export') exportGuests().catch(e => alert(e.message));
+    else if (act === 'a-pick') {
+      const k = el.dataset.k, r = respData.rows.find(x => respKey(x) === k), used = new Set(Object.values(inv.vinculos));
+      openPicker({ title: `Asociar a ${`${r.nombre} ${r.apellidos}`.trim()}`, includeLabel: 'Mostrar también los ya asociados', q: r.nombre,
+        candidate: (g, all) => all || !used.has(g.id), badge: g => (used.has(g.id) ? 'ya asociado' : ''),
+        onPick: gid => { link(k, gid); markDirty('invitados'); renderInvitados(); } });
+    }
     else if (act === 'a-filter') { assocFilter = el.dataset.v; renderAssoc(); }
     else if (act === 'a-accept') { link(el.dataset.k, el.dataset.g); markDirty('invitados'); renderInvitados(); }
     else if (act === 'a-unlink') { delete inv.vinculos[el.dataset.k]; markDirty('invitados'); renderInvitados(); }
@@ -455,18 +522,30 @@
   }
   function invitadosInput(el, isChange) {
     const inv = SEC.invitados.data;
-    if (el.id === 'g-q') { guestFilter.q = el.value; saveFilters(); if (isChange) return; const pos = el.selectionStart; renderInvitados(); const n = $('#g-q'); n.focus(); n.setSelectionRange(pos, pos); return; }
+    if (el.id === 'g-q') { guestFilter.q = el.value; saveFilters(); if (isChange) return; clearTimeout(invitadosInput.t); invitadosInput.t = setTimeout(() => { const pos = el.selectionStart; renderInvitados(); const n = $('#g-q'); n.focus(); n.setSelectionRange(pos, pos); }, 160); return; }
     if (el.id === 'g-grupo') { guestFilter.grupo = el.value; return renderInvitados(); }
     if (el.id === 'g-viene') { guestFilter.viene = el.value; return renderInvitados(); }
     if (el.id === 'g-subgrupo') { guestFilter.subgrupo = el.value; return renderInvitados(); }
     if (el.id === 'g-tipo') { guestFilter.tipo = el.value; return renderInvitados(); }
     if (el.id === 'g-import') { if (el.files[0]) importExcel(el.files[0]).catch(e => alert(e.message)); el.value = ''; return; }
     if (el.dataset.assoc !== undefined) { if (el.value) { link(el.dataset.assoc, el.value); markDirty('invitados'); renderInvitados(); } return; }
+    if (el.dataset.gmesa !== undefined) {
+      const tr0 = el.closest('tr[data-id]'), gid = tr0?.dataset.id, data = SEC.mesas.data;
+      data.mesas.forEach(t => { t.invitados = t.invitados.map(x => (x === gid ? '' : x)); });
+      if (el.value) {
+        const t = data.mesas.find(x => x.id === el.value); let i = 0;
+        while (i < t.plazas && t.invitados[i]) i++;
+        if (i >= t.plazas) { alert(`La ${mesaLabel(t)} está llena (${t.plazas} plazas).`); markDirty('mesas'); return renderInvitados(); }
+        while (t.invitados.length < i) t.invitados.push('');
+        t.invitados[i] = gid;
+      }
+      markDirty('mesas'); retint(el); refreshGuestStats(); return;
+    }
     const tr = el.closest('tr[data-id]'); if (!tr) return;
     const g = inv.invitados.find(g => g.id === tr.dataset.id); if (!g) return;
     if (el.dataset.gf) g[el.dataset.gf] = el.value; else if (el.dataset.gx) g.extra[el.dataset.gx] = el.value; else return;
     markDirty('invitados');
-    if (el.classList.contains('cell-text')) autosize(el.closest('tr'));
+    if (el.classList.contains('cell-text')) el.parentNode.dataset.v = el.value;
     if (el.dataset.gf === 'subgrupo' || el.tagName === 'SELECT') retint(el);
     refreshGuestStats();
   }
@@ -491,25 +570,88 @@
   }
   function renderMesas() {
     const guests = SEC.invitados.data.invitados, byId = Object.fromEntries(guests.map(g => [g.id, g])), mesas = SEC.mesas.data.mesas;
-    const seated = new Set(mesas.flatMap(m => m.invitados.filter(Boolean)));
+    const seated = new Set(mesas.flatMap(m => m.invitados.filter(Boolean)).filter(id => byId[id]));
     const sin = guests.filter(g => g.viene !== 'No' && !seated.has(g.id));
-    const plazas = mesas.reduce((s, m) => s + m.plazas, 0);
-    $('#tab-mesas').innerHTML = `
-      <div class="stats"><div class="stat"><strong>${mesas.length}</strong><span>mesas</span></div><div class="stat"><strong>${plazas}</strong><span>plazas</span></div><div class="stat"><strong>${seated.size}</strong><span>sentados</span></div><div class="stat"><strong>${sin.length}</strong><span>sin mesa (no cuentan los que no vienen)</span></div></div>
-      <div class="toolbar">${Object.entries(TIPOS_MESA).map(([t, [l]]) => `<button class="primary" data-act="m-add" data-t="${t}">＋ Mesa ${l.toLowerCase()}</button>`).join('')}<span class="grow"></span><button class="secondary" data-act="m-print">Imprimir</button></div>
-      ${sin.length ? `<details class="assoc"><summary>Invitados sin mesa (${sin.length})</summary><p class="muted">${sin.map(g => esc(fullName(g) || '(sin nombre)')).join(' · ')}</p></details>` : ''}
-      <div class="cards">${mesas.length ? [...mesas].sort((a, b) => a.numero - b.numero).map(m => {
-        const free = guests.filter(g => g.viene !== 'No' && (!seated.has(g.id) || m.invitados.includes(g.id)));
-        return `<article class="card" data-id="${m.id}"><div class="card-head"><label>Nº<input data-mf="numero" type="number" min="1" value="${m.numero}" class="w60" /></label><input data-mf="nombre" placeholder="Nombre de la mesa" value="${esc(m.nombre)}" /><button class="delete" data-act="m-del" aria-label="Eliminar mesa">${TRASH}</button></div>
-        <div class="card-row"><select data-mf="tipo">${opts(Object.entries(TIPOS_MESA).map(([t, [l]]) => [t, l]), m.tipo)}</select><label>Plazas<input data-mf="plazas" type="number" min="1" max="40" value="${m.plazas}" class="w60" /></label><label class="chk"><input type="checkbox" data-mf="presidencial"${m.presidencial ? ' checked' : ''} /> Presidencial</label>${m.tipo === 'rectangular' ? `<label class="chk"><input type="checkbox" data-mf="cabecera"${m.cabecera ? ' checked' : ''} /> Cabecera</label>` : ''}</div>
+    const plazas = mesas.reduce((s, m) => s + m.plazas, 0), conAlergia = [...seated].filter(id => alergiaDe(byId[id])).length;
+    const card = m => {
+      const ocup = m.invitados.slice(0, m.plazas).filter(id => byId[id]).length, pct = Math.round((ocup / m.plazas) * 100);
+      const alerg = m.invitados.slice(0, m.plazas).filter(id => byId[id] && alergiaDe(byId[id])).length;
+      return `<article class="mcard${m.presidencial ? ' pres' : ''}" data-id="${m.id}">
+        <header><span class="mnum">${m.presidencial ? '★' : m.numero}</span><input data-mf="nombre" placeholder="Nombre de la mesa (opcional)" value="${esc(m.nombre)}" /><button class="delete" data-act="m-del" aria-label="Eliminar mesa" title="Eliminar mesa">${TRASH}</button></header>
+        <div class="mopts">
+          <div class="seg" role="group" aria-label="Forma de la mesa">${Object.entries(TIPOS_MESA).map(([t, [l]]) => `<button class="${m.tipo === t ? 'on' : ''}" data-act="m-type" data-t="${t}">${l}</button>`).join('')}</div>
+          <div class="stepper" role="group" aria-label="Plazas"><button data-act="m-plazas" data-d="-1" aria-label="Menos plazas">−</button><span>${m.plazas} plazas</span><button data-act="m-plazas" data-d="1" aria-label="Más plazas">＋</button></div>
+          <label class="numlab">Nº <input data-mf="numero" type="number" min="1" value="${m.numero}" /></label>
+          <button class="chipbtn${m.presidencial ? ' on' : ''}" data-act="m-pres">★ Presidencial</button>
+          ${m.tipo === 'rectangular' ? `<button class="chipbtn${m.cabecera ? ' on' : ''}" data-act="m-cab">Con cabecera</button>` : ''}
+        </div>
+        <div class="mfill"><div class="bar"><i style="width:${pct}%"></i></div><span>${ocup}/${m.plazas} sentados${alerg ? ` · <b class="warn-t">⚠ ${alerg} con alergia</b>` : ''}</span></div>
         ${mesaSvg(m, byId)}
-        <ol class="seats">${Array.from({ length: m.plazas }, (_, i) => { const cur = m.invitados[i] || ''; return `<li><select data-seat="${i}"><option value="">Silla ${i + 1} · libre</option>${free.filter(g => !m.invitados.includes(g.id) || g.id === cur).map(g => `<option value="${g.id}"${g.id === cur ? ' selected' : ''}>${esc(fullName(g) || '(sin nombre)')}${g.viene === 'Pendiente' ? ' (pendiente)' : ''}</option>`).join('')}</select></li>`; }).join('')}</ol></article>`;
-      }).join('') : '<p class="empty">Añade tu primera mesa con los botones de arriba. Los invitados salen de la pestaña Invitados.</p>'}</div>`;
+        <ol class="mseats">${Array.from({ length: m.plazas }, (_, i) => {
+          const gg = byId[m.invitados[i]], al = gg ? alergiaDe(gg) : '';
+          return `<li class="${gg ? 'ocupada' : ''}" data-i="${i}"><span class="seat-print">${i + 1}. ${esc(gg ? fullName(gg) : '—')}${al ? ` ⚠ ${esc(al)}` : ''}</span><span class="sn">${i + 1}</span>
+            <button class="seatbtn" data-act="m-seat" data-i="${i}" title="${gg ? 'Cambiar' : 'Elegir invitado'}">${gg ? `<strong>${esc(fullName(gg) || '(sin nombre)')}</strong>${gg.grupo ? `<em>${esc(gg.grupo)}${gg.subgrupo ? ' · ' + esc(gg.subgrupo) : ''}</em>` : ''}` : '<span class="libre">＋ Elegir invitado…</span>'}</button>
+            ${al ? `<small class="alerg" title="Alergia o intolerancia">⚠ ${esc(al)}</small>` : ''}${gg ? `<button class="x2" data-act="m-unseat" data-i="${i}" aria-label="Quitar de la silla" title="Quitar de la silla">×</button>` : ''}</li>`;
+        }).join('')}</ol></article>`;
+    };
+    $('#tab-mesas').innerHTML = `
+      <div class="stats"><div class="stat"><strong>${mesas.length}</strong><span>mesas</span></div><div class="stat"><strong>${plazas}</strong><span>plazas</span></div><div class="stat"><strong>${seated.size}</strong><span>sentados</span></div><div class="stat"><strong>${sin.length}</strong><span>sin mesa (no cuentan los que no vienen)</span></div><div class="stat"><strong>${conAlergia}</strong><span>sentados con alergia</span></div></div>
+      <div class="toolbar">${Object.entries(TIPOS_MESA).map(([t, [l]]) => `<button class="primary" data-act="m-add" data-t="${t}">＋ Mesa ${l.toLowerCase()}</button>`).join('')}<span class="grow"></span><button class="secondary" data-act="alergias">Descargar alergias</button><button class="secondary" data-act="m-print">Imprimir</button></div>
+      ${sin.length ? `<details class="assoc"><summary>Invitados sin mesa (${sin.length})</summary><p class="muted">${sin.map(g => esc(fullName(g) || '(sin nombre)')).join(' · ')}</p></details>` : ''}
+      <div class="cards">${mesas.length ? [...mesas].sort((a, b) => a.numero - b.numero).map(card).join('') : '<p class="empty">Añade tu primera mesa con los botones de arriba. Los invitados salen de la pestaña Invitados.</p>'}</div>`;
+  }
+
+  /* ---- selector de invitado con buscador, dividido por grupo y subgrupo (sillas y asociación con el cuestionario) ---- */
+  const seatDlg = $('#dlg-seat');
+  let pickCtx = null;
+  function renderPicker() {
+    const inv = SEC.invitados.data, q = norm($('#seat-q').value), all = $('#seat-seated').checked;
+    const cand = inv.invitados.filter(g => pickCtx.candidate(g, all) && (!q || norm(`${fullName(g)} ${g.grupo} ${g.subgrupo}`).includes(q)));
+    const groups = [...new Set([...inv.grupos, ...cand.map(g => g.grupo)])].filter(gr => cand.some(g => g.grupo === gr));
+    const html = groups.map(gr => {
+      const ofG = cand.filter(g => g.grupo === gr), subs = [...new Set(ofG.map(g => g.subgrupo))].sort((x, y) => (x === '') - (y === '') || x.localeCompare(y, 'es'));
+      return `<section class="sgroup"><h4 style="background:${gr ? PALETTE[Math.max(0, inv.grupos.indexOf(gr)) % PALETTE.length] : '#efe6d2'}">${esc(gr || 'Sin grupo')} <span>${ofG.length}</span></h4>${subs.map(sg => `${sg ? `<h5>${esc(sg)}</h5>` : ''}<div class="sguests">${ofG.filter(g => g.subgrupo === sg).sort((x, y) => fullName(x).localeCompare(fullName(y), 'es')).map(g => { const bd = pickCtx.badge(g), al = alergiaDe(g); return `<button data-pick="${g.id}">${esc(fullName(g) || '(sin nombre)')}${g.viene === 'Pendiente' ? '<i>pendiente</i>' : ''}${bd ? `<i class="in">${esc(bd)}</i>` : ''}${al ? '<i class="al">⚠</i>' : ''}</button>`; }).join('')}</div>`).join('')}</section>`;
+    }).join('');
+    $('#seat-list').innerHTML = html || '<p class="muted center">Nadie coincide. Prueba a cambiar la búsqueda o a mostrar también los ya colocados.</p>';
+    $('#seat-count').textContent = `${cand.length} invitados`;
+  }
+  function openPicker(ctx) {
+    pickCtx = ctx; $('#seat-title').textContent = ctx.title; $('#seat-all-label').textContent = ctx.includeLabel;
+    $('#seat-q').value = ctx.q || ''; $('#seat-seated').checked = false; renderPicker(); seatDlg.showModal(); $('#seat-q').focus(); $('#seat-q').select();
+  }
+  function openSeat(mesaId, i) {
+    const m = SEC.mesas.data.mesas.find(x => x.id === mesaId), mm = mesaMap();
+    openPicker({
+      title: `${mesaLabel(m)} · silla ${i + 1}`, includeLabel: 'Mostrar también los que ya tienen mesa',
+      candidate: (g, all) => g.viene !== 'No' && (all || !mm.has(g.id) || mm.get(g.id).id === mesaId),
+      badge: g => (mm.has(g.id) ? mesaLabel(mm.get(g.id)) : ''),
+      onPick: gid => {
+        SEC.mesas.data.mesas.forEach(x => { x.invitados = x.invitados.map(id => (id === gid ? '' : id)); });
+        while (m.invitados.length <= i) m.invitados.push('');
+        m.invitados[i] = gid; markDirty('mesas'); renderMesas();
+      }
+    });
+  }
+  if (seatDlg) {
+    let pickTimer;
+    $('#seat-q').addEventListener('input', () => { clearTimeout(pickTimer); pickTimer = setTimeout(renderPicker, 80); });
+    $('#seat-seated').addEventListener('change', renderPicker);
+    const choose = gid => { const ctx = pickCtx; seatDlg.close(); ctx.onPick(gid); };
+    $('#seat-q').addEventListener('keydown', e => { if (e.key === 'Enter') { const first = $('#seat-list [data-pick]'); if (first) choose(first.dataset.pick); } });
+    $('#seat-list').addEventListener('click', e => { const b = e.target.closest('[data-pick]'); if (b) choose(b.dataset.pick); });
+    $('#seat-close').onclick = () => seatDlg.close();
   }
   function mesasEvent(act, el, ev) {
     const data = SEC.mesas.data, art = el.closest('[data-id]'), m = art && data.mesas.find(m => m.id === art.dataset.id);
     if (act === 'm-add') { const t = el.dataset.t; let n = 1; const used = new Set(data.mesas.map(m => m.numero)); while (used.has(n)) n++; data.mesas.push({ id: uid(), numero: n, nombre: '', tipo: t, plazas: TIPOS_MESA[t][1], invitados: [] }); markDirty('mesas'); renderMesas(); }
+    else if (act === 'alergias') descargarAlergias().catch(e => alert(e.message));
     else if (act === 'm-print') window.print();
+    else if (act === 'm-seat') openSeat(m.id, Number(el.dataset.i));
+    else if (act === 'm-unseat') { m.invitados[Number(el.dataset.i)] = ''; markDirty('mesas'); renderMesas(); }
+    else if (act === 'm-type') { m.tipo = el.dataset.t; if (m.tipo !== 'rectangular') m.cabecera = false; markDirty('mesas'); renderMesas(); }
+    else if (act === 'm-plazas') { m.plazas = Math.max(1, Math.min(40, m.plazas + Number(el.dataset.d))); m.invitados = m.invitados.slice(0, m.plazas); markDirty('mesas'); renderMesas(); }
+    else if (act === 'm-pres') { const v = !m.presidencial; data.mesas.forEach(x => { x.presidencial = false; }); m.presidencial = v; markDirty('mesas'); renderMesas(); }
+    else if (act === 'm-cab') { m.cabecera = !m.cabecera; markDirty('mesas'); renderMesas(); }
     else if (act === 'm-del') ask(`Se eliminará la mesa ${m.numero}${m.nombre ? ' · ' + m.nombre : ''}. Los invitados quedan sin mesa.`).then(ok => { if (ok) { data.mesas = data.mesas.filter(x => x.id !== m.id); markDirty('mesas'); renderMesas(); } });
     else if (el.dataset.seat !== undefined && ev === 'change') {
       const i = Number(el.dataset.seat); data.mesas.forEach(x => x.invitados = x.invitados.map(id => id === el.value ? '' : id));
@@ -688,7 +830,7 @@
   /* ---------- pestañas ---------- */
   const TABS = {
     respuestas: { need: [], render: renderRespuestas },
-    invitados: { need: ['invitados'], render: renderInvitados, resp: true },
+    invitados: { need: ['invitados', 'mesas'], render: renderInvitados, resp: true },
     mesas: { need: ['invitados', 'mesas'], render: renderMesas },
     presupuesto: { need: ['invitados', 'presupuesto'], render: renderPresupuesto },
     proveedores: { need: ['tareas', 'proveedores'], render: renderProveedores },
@@ -721,7 +863,8 @@
     if (/^(INPUT|TEXTAREA)$/.test(e.target.tagName) && e.target.type !== 'checkbox') return;   // dentro de una celda se usa el deshacer normal
     e.preventDefault(); e.shiftKey ? redo() : undo();
   });
-  $('#undo').onclick = undo; $('#redo').onclick = redo;
+  if ($('#undo')) $('#undo').onclick = undo;
+  if ($('#redo')) $('#redo').onclick = redo;
 
   /* ---------- eventos delegados ---------- */
   const handlers = { invitados: invitadosClick, mesas: mesasEvent, presupuesto: presupuestoEvent, proveedores: proveedoresEvent, tareas: tareasEvent };
