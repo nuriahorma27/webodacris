@@ -116,6 +116,21 @@
       dialog.form::backdrop{background:rgba(52,67,52,.35)}
       dialog.form h2{margin-bottom:14px;font-size:28px}
       dialog.form label{margin-bottom:12px}
+
+      .table-wrap.tall{max-height:72vh;overflow:auto}
+      .table-wrap.tall thead th{position:sticky;top:0;z-index:3}
+      table.edit{font-size:13px}
+      table.edit td{padding:2px 4px;white-space:nowrap}
+      table.edit input,table.edit select{width:100%;min-width:0;padding:5px 8px;border:1px solid transparent;border-radius:4px;background:transparent;font-size:13px}
+      table.edit input:hover,table.edit select:hover{border-color:var(--line)}
+      table.edit input:focus{background:#fffdf7;border-color:var(--green)}
+      table.edit select{appearance:none;-webkit-appearance:none;border-radius:12px;padding:4px 10px;text-align:center;text-align-last:center;cursor:pointer;background-color:transparent}
+      table.edit select[style]{border-color:rgba(83,96,72,.12)}
+      table.edit .c-nombre{min-width:130px}table.edit .c-apellido{min-width:190px}
+      table.edit td:nth-child(n+3):nth-child(-n+6) select,table.edit td:nth-child(5) input{min-width:112px}
+      table.edit input[data-gf=subgrupo]{min-width:190px}
+      table.edit th{padding:9px 10px;white-space:nowrap}
+      table.edit tbody tr:hover{background:rgba(115,123,84,.09)}
       @media print{body *{visibility:hidden}#tab-mesas,#tab-mesas *{visibility:visible}#tab-mesas{position:absolute;left:0;top:0;width:100%}.toolbar,.assoc,.seats select{display:none!important}}
     </style>
   </head>
@@ -188,7 +203,7 @@
       </dialog>
     </main>
 
-    <script src="/gestion-data.js"></script>
-    <script src="/admin.js"></script>
+    <script src="/gestion-data.js?v=3"></script>
+    <script src="/admin.js?v=3"></script>
   </body>
 </html>

@@ -182,9 +182,9 @@
         <button class="secondary" data-act="g-export">Exportar Excel</button>
       </div>
       <details class="assoc" ${pend ? 'open' : ''}><summary>Respuestas del cuestionario ${respData ? `· ${pend} sin asociar de ${respData.rows.length}` : ''}</summary><div id="assoc"></div></details>
-      <datalist id="dl-sub">${[...new Set(list.map(g => g.subgrupo).filter(Boolean))].sort().map(x => `<option value="${esc(x)}">`).join('')}</datalist><div class="table-wrap"><table class="edit"><thead><tr><th>Nombre</th><th>Apellido</th><th>¿Viene?</th><th>Grupo</th><th>Subgrupo</th><th>Tipo</th>${inv.columnas.map(c => `<th>${esc(c.nombre)} <button class="x" data-act="g-delcol" data-id="${c.id}" title="Quitar columna">×</button></th>`).join('')}<th>Cuestionario</th><th></th></tr></thead>
+      <datalist id="dl-sub">${[...new Set(list.map(g => g.subgrupo).filter(Boolean))].sort().map(x => `<option value="${esc(x)}">`).join('')}</datalist><div class="table-wrap tall"><table class="edit"><thead><tr><th>Nombre</th><th>Apellido</th><th>¿Viene?</th><th>Grupo</th><th>Subgrupo</th><th>Tipo</th>${inv.columnas.map(c => `<th>${esc(c.nombre)} <button class="x" data-act="g-delcol" data-id="${c.id}" title="Quitar columna">×</button></th>`).join('')}<th>Cuestionario</th><th></th></tr></thead>
       <tbody>${shown.length ? shown.map(g => `<tr data-id="${g.id}">
-        <td><input data-gf="nombre" value="${esc(g.nombre)}" /></td><td><input data-gf="apellido" value="${esc(g.apellido)}" /></td>
+        <td><input data-gf="nombre" class="c-nombre" value="${esc(g.nombre)}" /></td><td><input data-gf="apellido" class="c-apellido" value="${esc(g.apellido)}" /></td>
         <td><select data-gf="viene"${tint(g.viene)}>${opts(VIENE, g.viene)}</select></td>
         <td><select data-gf="grupo"${tint(g.grupo, inv.grupos.indexOf(g.grupo))}>${opts(inv.grupos, g.grupo, '—')}</select></td><td><input data-gf="subgrupo" list="dl-sub" value="${esc(g.subgrupo)}"${tint(g.subgrupo)} /></td>
         <td><select data-gf="tipo"${tint(g.tipo)}>${opts(['Adulto', 'Niño'], g.tipo)}</select></td>
@@ -245,7 +245,10 @@
     const iViene = col(h => h.replace(/[¿?]/g, '') === 'viene'), iGrupo = col(h => h === 'grupo'), iSub = col(h => h === 'subgrupo'), iTipo = col(h => h.startsWith('adulto'));
     if (hi < 0 && !(iN >= 0)) { head.length = 0; }
     const nameCol = iFull >= 0 ? iFull : iN >= 0 ? iN : 0;
-    const inv = SEC.invitados.data, K = g => `${norm(g.nombre)}|${norm(g.apellido)}|${norm(g.grupo)}|${norm(g.subgrupo)}`;
+    const inv = SEC.invitados.data;
+    if (inv.invitados.length && await ask(`Ya hay ${inv.invitados.length} invitados en la lista. ¿Quieres sustituirlos por los del Excel? (Si no, se cancela la importación y no cambia nada.)`, 'Sustituir')) { inv.invitados = []; inv.vinculos = {}; }
+    else if (inv.invitados.length) return;
+    const K = g => `${norm(g.nombre)}|${norm(g.apellido)}|${norm(g.grupo)}|${norm(g.subgrupo)}`;
     const seen = new Set(inv.invitados.map(K));
     const extras = head.map((h, i) => (i === nameCol || i === iN || i === iA || i === iViene || i === iGrupo || i === iSub || i === iTipo || IGNORE_COLS.has(h) ? null : (IMPORT_COLS[h] || [String(all[hi][i]).trim(), 'texto'])));
     let added = 0, skipped = 0;

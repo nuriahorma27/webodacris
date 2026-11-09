@@ -9,6 +9,18 @@
         "X-Robots-Tag": "noindex, nofollow",
         "Cache-Control": "no-store"
       }
+    },
+    {
+      "route": "/admin.js",
+      "headers": {
+        "Cache-Control": "no-store"
+      }
+    },
+    {
+      "route": "/gestion-data.js",
+      "headers": {
+        "Cache-Control": "no-store"
+      }
     }
   ]
 }
