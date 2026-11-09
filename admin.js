@@ -52,6 +52,11 @@
     const { rev, data } = await res.json();
     const base = defaults[name]();
     SEC[name] = { rev, data: data ? { ...base, ...data } : base, timer: null, saving: false, again: false, fresh: !data };
+    if (name === 'invitados' && data) {
+      const d = SEC[name].data, ejemplo = defaults.invitados().grupos, usados = new Set(d.invitados.map(g => g.grupo));
+      const limpios = d.grupos.filter(g => usados.has(g) || !ejemplo.includes(g));
+      if (limpios.length !== d.grupos.length) { d.grupos = limpios; markDirty(name); }
+    }
     if (!data) markDirty(name);   // primera vez: guarda los valores de partida
     return SEC[name].data;
   }
@@ -130,9 +135,27 @@
   const hashIdx = v => { let h = 5381; for (const ch of norm(v)) h = ((h << 5) + h + ch.charCodeAt(0)) | 0; return Math.abs(h) % PALETTE.length; };
   const tint = (v, i) => { const k = norm(v); if (!k) return ''; return ` style="background:${FIXED[k] || PALETTE[i !== undefined && i >= 0 ? i % PALETTE.length : hashIdx(v)]}"`; };
   const isFiltering = () => !!(guestFilter.q || guestFilter.grupo || guestFilter.subgrupo || guestFilter.viene || guestFilter.tipo);
-  function filteredGuests() {
-    const q = norm(guestFilter.q);
-    return SEC.invitados.data.invitados.filter(g => (!q || norm(`${fullName(g)} ${g.grupo} ${g.subgrupo}`).includes(q)) && (!guestFilter.grupo || g.grupo === guestFilter.grupo) && (!guestFilter.subgrupo || g.subgrupo === guestFilter.subgrupo) && (!guestFilter.viene || g.viene === guestFilter.viene) && (!guestFilter.tipo || g.tipo === guestFilter.tipo));
+  function filteredGuests(f = guestFilter) {
+    const q = norm(f.q);
+    return SEC.invitados.data.invitados.filter(g => (!q || norm(`${fullName(g)} ${g.grupo} ${g.subgrupo}`).includes(q)) && (!f.grupo || g.grupo === f.grupo) && (!f.subgrupo || g.subgrupo === f.subgrupo) && (!f.viene || g.viene === f.viene) && (!f.tipo || g.tipo === f.tipo));
+  }
+  // Valores que existen de verdad para un campo, con cuántos invitados hay en cada uno (según el resto de filtros).
+  function facet(field) {
+    const counts = new Map();
+    for (const g of filteredGuests({ ...guestFilter, [field]: '' })) { const v = g[field]; if (v) counts.set(v, (counts.get(v) || 0) + 1); }
+    if (guestFilter[field] && !counts.has(guestFilter[field])) counts.set(guestFilter[field], 0);
+    return counts;
+  }
+  function filtersHtml() {
+    const inv = SEC.invitados.data, chip = (k, v, n, color) => `<button class="fchip${guestFilter[k] === v ? ' on' : ''}" data-act="g-f" data-k="${k}" data-v="${esc(v)}"${color ? ` style="--c:${color}"` : ''}>${esc(v)} <b>${n}</b></button>`;
+    const ordered = (counts, pref) => [...counts.keys()].sort((x, y) => { const i = pref.indexOf(x), j = pref.indexOf(y); return (i < 0 ? 999 : i) - (j < 0 ? 999 : j) || x.localeCompare(y, 'es'); });
+    const row = (label, html) => html ? `<div class="frow"><span class="flabel">${label}</span><div class="fchips">${html}</div></div>` : '';
+    const v = facet('viene'), t = facet('tipo'), g = facet('grupo'), sg = facet('subgrupo');
+    const allG = [...new Set(inv.invitados.map(x => x.grupo).filter(Boolean))];
+    return row('¿Viene?', ordered(v, ['Sí', 'Pendiente', 'No']).map(x => chip('viene', x, v.get(x), FIXED[norm(x)])).join(''))
+      + row('Tipo', ordered(t, ['Adulto', 'Niño']).map(x => chip('tipo', x, t.get(x), FIXED[norm(x)])).join(''))
+      + row('Grupo', ordered(g, allG).map(x => chip('grupo', x, g.get(x), PALETTE[Math.max(0, inv.grupos.indexOf(x)) % PALETTE.length])).join(''))
+      + row('Subgrupo', ordered(sg, []).map(x => chip('subgrupo', x, sg.get(x), PALETTE[hashIdx(x)])).join(''));
   }
   function guestStatsArr(shown) {
     const total = SEC.invitados.data.invitados.length, n = f => shown.filter(f).length;
@@ -142,6 +165,7 @@
   function refreshGuestStats() {
     const box = $('#tab-invitados .stats'); if (!box) return;
     box.innerHTML = guestStatsArr(filteredGuests()).map(([x, l]) => `<div class="stat"><strong>${x}</strong><span>${l}</span></div>`).join('');
+    const fb = $('#gfilters'); if (fb) fb.innerHTML = filtersHtml();
     const c = $('#tab-invitados .count'); if (c) c.textContent = `${filteredGuests().length} de ${SEC.invitados.data.invitados.length}`;
   }
   function retint(el) {
@@ -190,10 +214,6 @@
       <div class="stats">${stats.map(([x, l]) => `<div class="stat"><strong>${x}</strong><span>${l}</span></div>`).join('')}</div>
       <div class="toolbar">
         <input type="search" id="g-q" placeholder="Buscar…" value="${esc(guestFilter.q)}" />
-        <select id="g-grupo">${opts(inv.grupos, guestFilter.grupo, 'Todos los grupos')}</select>
-        <select id="g-subgrupo">${opts(subgrupos, guestFilter.subgrupo, 'Todos los subgrupos')}</select>
-        <select id="g-viene">${opts(VIENE, guestFilter.viene, '¿Viene? (todos)')}</select>
-        <select id="g-tipo">${opts(['Adulto', 'Niño'], guestFilter.tipo, 'Adulto / Niño')}</select>
         ${filtering ? '<button class="link" data-act="g-clear">Quitar filtros</button>' : ''}
         <b class="count">${shown.length} de ${list.length}</b>
         <span class="grow"></span>
@@ -203,6 +223,7 @@
         <label class="secondary filebtn">Importar Excel<input type="file" id="g-import" accept=".xlsx,.xls,.csv" hidden /></label>
         <button class="secondary" data-act="g-export">Exportar Excel</button>
       </div>
+      <div class="filters" id="gfilters">${filtersHtml()}</div>
       <details class="assoc" ${pend ? 'open' : ''}><summary>Respuestas del cuestionario ${respData ? `· ${pend} sin asociar de ${respData.rows.length}` : ''}</summary><div id="assoc"></div></details>
       <datalist id="dl-sub">${[...new Set(list.map(g => g.subgrupo).filter(Boolean))].sort().map(x => `<option value="${esc(x)}">`).join('')}</datalist><div class="table-wrap tall"><table class="edit"><thead><tr><th>Nombre</th><th>Apellido</th><th>¿Viene?</th><th>Grupo</th><th>Subgrupo</th><th>Tipo</th>${inv.columnas.map(c => `<th>${esc(c.nombre)} <button class="x" data-act="g-delcol" data-id="${c.id}" title="Quitar columna">×</button></th>`).join('')}<th>Cuestionario</th><th></th></tr></thead>
       <tbody>${shown.length ? shown.map(g => `<tr data-id="${g.id}">
@@ -333,6 +354,7 @@
     const inv = SEC.invitados.data;
     if (act === 'g-add') { inv.invitados.push(newGuest()); markDirty('invitados'); renderInvitados(); const rows = document.querySelectorAll('#tab-invitados tbody tr'); rows[rows.length - 1]?.querySelector('input')?.focus(); }
     else if (act === 'g-del') { const g = inv.invitados.find(g => g.id === el.dataset.id); if (await ask(`Se eliminará a ${fullName(g) || 'este invitado'}.`)) { inv.invitados = inv.invitados.filter(x => x.id !== g.id); for (const k of Object.keys(inv.vinculos)) if (inv.vinculos[k] === g.id) delete inv.vinculos[k]; markDirty('invitados'); renderInvitados(); } }
+    else if (act === 'g-f') { const k = el.dataset.k; guestFilter[k] = guestFilter[k] === el.dataset.v ? '' : el.dataset.v; if (k === 'grupo' && guestFilter.subgrupo && !inv.invitados.some(g => g.grupo === guestFilter.grupo && g.subgrupo === guestFilter.subgrupo) && guestFilter.grupo) guestFilter.subgrupo = ''; renderInvitados(); }
     else if (act === 'g-clear') { Object.assign(guestFilter, { q: '', grupo: '', subgrupo: '', viene: '', tipo: '' }); renderInvitados(); }
     else if (act === 'g-col') colDialog.showModal();
     else if (act === 'g-delcol') { const c = inv.columnas.find(c => c.id === el.dataset.id); if (await ask(`Se quitará la columna «${c.nombre}» con todos sus datos.`, 'Quitar')) { inv.columnas = inv.columnas.filter(x => x.id !== c.id); inv.invitados.forEach(g => delete g.extra[c.id]); markDirty('invitados'); renderInvitados(); } }
