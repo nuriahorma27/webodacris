@@ -55,15 +55,47 @@
     if (name === 'invitados' && data) {
       const d = SEC[name].data, ejemplo = defaults.invitados().grupos, usados = new Set(d.invitados.map(g => g.grupo));
       const limpios = d.grupos.filter(g => usados.has(g) || !ejemplo.includes(g));
-      if (limpios.length !== d.grupos.length) { d.grupos = limpios; markDirty(name); }
+      if (limpios.length !== d.grupos.length) { d.grupos = limpios; markDirty(name, true); }
     }
-    if (name === 'invitados' && fillSino(SEC[name].data)) markDirty(name);
+    if (name === 'invitados' && fillSino(SEC[name].data)) markDirty(name, true);
     if (!data) markDirty(name);   // primera vez: guarda los valores de partida
     return SEC[name].data;
   }
-  function markDirty(name) {
+  // Historial: cada tanda de cambios seguidos (menos de 1 s entre ellos) es un paso que se puede deshacer.
+  const HIST = {};
+  const hist = name => HIST[name] || (HIST[name] = { undo: [], redo: [], snap: null, pending: false, settle: null });
+  function baseline(name) { const h = hist(name); h.snap = JSON.stringify(SEC[name].data); }
+  function markDirty(name, noHistory) {
     const s = SEC[name]; if (!s) return;
+    if (!noHistory) {
+      const h = hist(name);
+      if (h.snap === null) h.snap = '{}';
+      if (!h.pending) { h.undo.push(h.snap); if (h.undo.length > 60) h.undo.shift(); h.redo = []; h.pending = true; }
+      clearTimeout(h.settle); h.settle = setTimeout(() => { h.snap = JSON.stringify(SEC[name].data); h.pending = false; updateUndoButtons(); }, 1000);
+      updateUndoButtons();
+    }
     setSave('Guardando…'); clearTimeout(s.timer); s.timer = setTimeout(() => flush(name), 700);
+  }
+  const TAB_SECTION = { invitados: 'invitados', mesas: 'mesas', presupuesto: 'presupuesto', proveedores: 'proveedores', tareas: 'tareas' };
+  function updateUndoButtons() {
+    const name = TAB_SECTION[current], h = name && HIST[name];
+    const u = $('#undo'), r = $('#redo'); if (!u) return;
+    u.disabled = !h || !h.undo.length; r.disabled = !h || !h.redo.length;
+    u.title = h?.undo.length ? `Deshacer (${h.undo.length})` : 'Nada que deshacer';
+    $('#undo-wrap').hidden = !name;
+  }
+  function restore(name, json) {
+    SEC[name].data = { ...defaults[name](), ...JSON.parse(json) };
+    hist(name).snap = json; hist(name).pending = false; clearTimeout(hist(name).settle);
+    markDirty(name, true); TABS[current].render(); updateUndoButtons();
+  }
+  function undo() {
+    const name = TAB_SECTION[current], h = name && HIST[name]; if (!h || !h.undo.length) return;
+    const cur = JSON.stringify(SEC[name].data); h.redo.push(cur); restore(name, h.undo.pop()); setSave('Cambio deshecho ✓');
+  }
+  function redo() {
+    const name = TAB_SECTION[current], h = name && HIST[name]; if (!h || !h.redo.length) return;
+    h.undo.push(JSON.stringify(SEC[name].data)); restore(name, h.redo.pop()); setSave('Cambio rehecho ✓');
   }
   async function flush(name) {
     const s = SEC[name];
@@ -219,7 +251,8 @@
       const v = g.extra[c.id] ?? '';
       if (c.tipo === 'sino') return `<select data-gx="${c.id}"${tint(v || 'No')}>${opts(['Sí', 'No'], v || 'No')}</select>`;
       if (c.tipo === 'lista') return `<select data-gx="${c.id}"${tint(v)}>${opts((c.opciones || '').split(',').map(s => s.trim()).filter(Boolean), v, '—')}</select>`;
-      return `<input data-gx="${c.id}" type="${c.tipo === 'numero' ? 'number' : 'text'}" value="${esc(v)}" />`;
+      if (c.tipo === 'numero') return `<input data-gx="${c.id}" type="number" value="${esc(v)}" />`;
+      return `<textarea class="cell-text" rows="1" data-gx="${c.id}" spellcheck="false">${esc(v)}</textarea>`;
     };
     const pend = respData ? respData.rows.filter(r => !inv.vinculos[respKey(r)]).length : 0;
     $('#tab-invitados').innerHTML = `
@@ -233,6 +266,7 @@
         <button class="secondary" data-act="g-col">＋ Columna</button>
         <button class="secondary" data-act="g-grupos">Grupos</button>
         <label class="secondary filebtn">Importar Excel<input type="file" id="g-import" accept=".xlsx,.xls,.csv" hidden /></label>
+        <button class="secondary" data-act="g-copy" title="Copia lo que ves en la tabla para pegarlo en Excel o Word">Copiar tabla</button>
         <button class="secondary" data-act="g-export">Exportar Excel</button>
       </div>
       <div class="filters" id="gfilters">${filtersHtml()}</div>
@@ -247,6 +281,7 @@
         <td class="center">${vinculado.has(g.id) ? '<span class="pill ok">✓ asociado</span>' : '<span class="pill">—</span>'}</td>
         <td class="actions-cell"><button class="delete" data-act="g-del" data-id="${g.id}" aria-label="Eliminar">${TRASH}</button></td></tr>`).join('') : `<tr><td class="empty" colspan="${8 + inv.columnas.length}">${list.length ? 'Ningún invitado coincide con el filtro.' : 'Aún no hay invitados. Añádelos, impórtalos desde Excel o asócialos desde el cuestionario.'}</td></tr>`}</tbody></table></div>`;
     renderAssoc();
+    autosize($('#tab-invitados'));
   }
 
   let assocFilter = 'review';
@@ -292,9 +327,14 @@
   }
   const yesNo = v => { const x = norm(v); return x === 'si' ? 'Sí' : x === 'no' ? 'No' : String(v).trim(); };
   // Columnas conocidas del Excel de invitados -> columna de la ficha (tipo).
-  const IMPORT_COLS = { 'direccion': ['Notas', 'texto'], 'observaciones': ['Notas', 'texto'], 'alergias': ['Alergias', 'texto'], 'invitacion': ['Invitación entregada', 'sino'], 'regalo': ['Regalo', 'sino'], 'cantidad (regalo)': ['Cantidad (regalo)', 'numero'], 'agradecimientos': ['Agradecimiento enviado', 'sino'], 'agradecimiento': ['Agradecimiento enviado', 'sino'], 'bus ida': ['Bus ida', 'texto'], 'bus vuelta': ['Bus vuelta', 'texto'], 'hora vuelta': ['Hora bus vuelta', 'texto'], 'hora ida': ['Hora bus ida', 'texto'], 'alojamiento': ['Alojamiento', 'texto'], 'menu': ['Menú', 'texto'], 'notas': ['Notas', 'texto'] };
+  const IMPORT_COLS = { 'direccion': ['Dirección', 'texto'], 'observaciones': ['Notas', 'texto'], 'alergias': ['Alergias', 'texto'], 'invitacion': ['Invitación entregada', 'sino'], 'regalo': ['Regalo', 'sino'], 'cantidad (regalo)': ['Cantidad (regalo)', 'numero'], 'agradecimientos': ['Agradecimiento enviado', 'sino'], 'agradecimiento': ['Agradecimiento enviado', 'sino'], 'bus ida': ['Bus ida', 'texto'], 'bus vuelta': ['Bus vuelta', 'texto'], 'hora vuelta': ['Hora bus vuelta', 'texto'], 'hora ida': ['Hora bus ida', 'texto'], 'alojamiento': ['Alojamiento', 'texto'], 'menu': ['Menú', 'texto'], 'notas': ['Notas', 'texto'] };
   const IGNORE_COLS = new Set(['mesas', 'mesa', '']);
   const setNote = (g, inv, text) => { const id = ensureCol(inv, 'Notas', 'texto'); g.extra[id] = g.extra[id] ? `${g.extra[id]} · ${text}` : text; };
+  function autosize(root = document) {
+    const areas = [...root.querySelectorAll('textarea.cell-text')];
+    areas.forEach(t => { t.style.height = 'auto'; });
+    areas.forEach(t => { t.style.height = Math.max(30, t.scrollHeight + 2) + 'px'; });
+  }
   async function importExcel(file) {
     const X = await getXLSX();
     const wb = X.read(await file.arrayBuffer(), { type: 'array' });
@@ -320,7 +360,6 @@
       if (iFull >= 0 || iA < 0) [nombre, apellido] = splitName(r[nameCol]); else { nombre = String(r[iN] ?? '').trim(); apellido = String(r[iA] ?? '').trim(); }
       if (!nombre && !apellido) continue;
       const grupo = iGrupo >= 0 ? String(r[iGrupo]).trim() : '';
-      if (/^novi[oa]s?$/.test(norm(grupo))) { skipped++; continue; }   // la fila de los novios
       const g = newGuest(nombre, apellido);
       g.grupo = grupo; g.subgrupo = iSub >= 0 ? String(r[iSub]).trim() : '';
       if (iTipo >= 0 && /^ni/.test(norm(r[iTipo]))) g.tipo = 'Niño';
@@ -330,17 +369,44 @@
       inv.invitados.push(g); added++;
       if (g.grupo && !inv.grupos.includes(g.grupo)) inv.grupos.push(g.grupo);
     }
-    fillSino(inv); markDirty('invitados'); renderInvitados(); alert(`Se han añadido ${added} invitados.${skipped ? ` Se han omitido ${skipped} (ya estaban o es la fila de los novios).` : ''}`);
+    fillSino(inv); markDirty('invitados'); renderInvitados(); alert(`Se han añadido ${added} invitados.${skipped ? ` Se han omitido ${skipped} (ya estaban).` : ''}`);
   }
+  let excelJsPromise;
+  const getExcelJS = () => excelJsPromise || (excelJsPromise = new Promise((res, rej) => {
+    if (window.ExcelJS) return res(window.ExcelJS);
+    const sc = document.createElement('script'); sc.src = 'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js';
+    sc.onload = () => res(window.ExcelJS); sc.onerror = () => rej(new Error('No se ha podido cargar la librería de Excel.')); document.head.appendChild(sc);
+  }));
+  // Excel con la misma estructura que la lista original: hoja «1) Info invitados», tabla desde B2, columna A estrecha y paneles fijos.
+  const EXPORT_COLS = [['NOMBRE Y APELLIDOS', 29], ['MESAS', 7.5], ['INVITACIÓN', 12.4], ['¿VIENE?', 11.6], ['GRUPO', 22], ['SUBGRUPO', 22], ['ADULTO/NIÑO', 14.1], ['DIRECCIÓN', 30], ['ALERGIAS', 18], ['BUS IDA', 15.8], ['BUS VUELTA', 15.8], ['HORA VUELTA', 12.9], ['REGALO', 10], ['CANTIDAD (REGALO)', 19.2], ['AGRADECIMIENTOS', 22.6]];
+  const EXPORT_MAP = { 'INVITACIÓN': 'Invitación entregada', 'DIRECCIÓN': 'Dirección', 'ALERGIAS': 'Alergias', 'BUS IDA': 'Bus ida', 'BUS VUELTA': 'Bus vuelta', 'HORA VUELTA': 'Hora bus vuelta', 'REGALO': 'Regalo', 'CANTIDAD (REGALO)': 'Cantidad (regalo)', 'AGRADECIMIENTOS': 'Agradecimiento enviado' };
   async function exportGuests() {
-    const X = await getXLSX(), inv = SEC.invitados.data;
-    const mesas = SEC.mesas?.data.mesas || [];
-    const data = inv.invitados.map(g => {
+    const E = await getExcelJS(), inv = SEC.invitados.data, mesas = SEC.mesas?.data.mesas || [];
+    const colByName = Object.fromEntries(inv.columnas.map(c => [norm(c.nombre), c]));
+    const used = new Set(Object.values(EXPORT_MAP).map(norm));
+    const extraCols = inv.columnas.filter(c => !used.has(norm(c.nombre)));      // Notas y columnas propias, al final
+    const val = (g, name) => { const c = colByName[norm(name)]; const v = c ? (g.extra[c.id] ?? '') : ''; return c?.tipo === 'sino' ? (v === 'Sí' ? 'Si' : v) : c?.tipo === 'numero' && v !== '' ? Number(v) : v; };
+    const heads = [...EXPORT_COLS.map(([h]) => h), ...extraCols.map(c => c.nombre.toUpperCase())];
+    const rows = inv.invitados.map(g => {
       const m = mesas.find(m => m.invitados.includes(g.id));
-      return { Nombre: g.nombre, Apellido: g.apellido, '¿Viene?': g.viene, Grupo: g.grupo, Subgrupo: g.subgrupo, Tipo: g.tipo, ...(m ? { Mesa: m.numero } : {}), ...Object.fromEntries(inv.columnas.map(c => [c.nombre, g.extra[c.id] ?? ''])) };
+      return heads.map((h, i) => {
+        if (h === 'NOMBRE Y APELLIDOS') return fullName(g);
+        if (h === 'MESAS') return m ? m.numero : '-';
+        if (h === '¿VIENE?') return g.viene === 'Sí' ? 'Si' : g.viene === 'Pendiente' ? 'Tal vez' : g.viene;
+        if (h === 'GRUPO') return g.grupo; if (h === 'SUBGRUPO') return g.subgrupo; if (h === 'ADULTO/NIÑO') return g.tipo;
+        if (EXPORT_MAP[h]) return val(g, EXPORT_MAP[h]);
+        const c = extraCols[i - EXPORT_COLS.length]; return c ? val(g, c.nombre) : '';
+      });
     });
-    const wb = X.utils.book_new(); X.utils.book_append_sheet(wb, X.utils.json_to_sheet(data), 'Invitados');
-    X.writeFile(wb, `invitados-boda-${new Date().toISOString().slice(0, 10)}.xlsx`);
+    const wb = new E.Workbook(), ws = wb.addWorksheet('1) Info invitados', { views: [{ state: 'frozen', xSplit: 2, ySplit: 2, showGridLines: false }] });
+    ws.getColumn(1).width = 1.4;
+    heads.forEach((h, i) => { ws.getColumn(i + 2).width = EXPORT_COLS[i]?.[1] || 20; });
+    ws.addTable({ name: 'Table_1', ref: 'B2', headerRow: true, totalsRow: false, style: { theme: 'TableStyleMedium7', showRowStripes: true }, columns: heads.map(h => ({ name: h, filterButton: true })), rows: rows.length ? rows : [heads.map(() => '')] });
+    ws.getRow(2).height = 24; ws.getRow(2).font = { bold: true, name: 'Calibri', size: 11 };
+    ws.eachRow((row, n) => { if (n > 2) row.alignment = { vertical: 'middle', wrapText: false }; });
+    ws.getColumn(heads.indexOf('DIRECCIÓN') + 2).alignment = { vertical: 'middle', wrapText: true };
+    const buf = await wb.xlsx.writeBuffer();
+    download(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), `LISTA_INVITADOS_${new Date().toISOString().slice(0, 10)}.xlsx`);
   }
 
   const colDialog = $('#dlg-col');
@@ -371,6 +437,13 @@
     else if (act === 'g-col') colDialog.showModal();
     else if (act === 'g-delcol') { const c = inv.columnas.find(c => c.id === el.dataset.id); if (await ask(`Se quitará la columna «${c.nombre}» con todos sus datos.`, 'Quitar')) { inv.columnas = inv.columnas.filter(x => x.id !== c.id); inv.invitados.forEach(g => delete g.extra[c.id]); markDirty('invitados'); renderInvitados(); } }
     else if (act === 'g-grupos') { $('#dlg-grupos-form').grupos.value = inv.grupos.join('\n'); gruposDialog.showModal(); }
+    else if (act === 'g-copy') {
+      const cols = inv.columnas, rows = filteredGuests();
+      const head = ['Nombre', 'Apellido', '¿Viene?', 'Grupo', 'Subgrupo', 'Tipo', ...cols.map(c => c.nombre)];
+      const clean = v => String(v ?? '').replace(/[\t\r\n]+/g, ' ');
+      const tsv = [head, ...rows.map(g => [g.nombre, g.apellido, g.viene, g.grupo, g.subgrupo, g.tipo, ...cols.map(c => g.extra[c.id] ?? '')])].map(r => r.map(clean).join('\t')).join('\n');
+      try { await navigator.clipboard.writeText(tsv); setSave(`Copiadas ${rows.length} filas ✓`); } catch { prompt('Copia con Ctrl+C:', tsv.slice(0, 20000)); }
+    }
     else if (act === 'g-export') exportGuests().catch(e => alert(e.message));
     else if (act === 'a-filter') { assocFilter = el.dataset.v; renderAssoc(); }
     else if (act === 'a-accept') { link(el.dataset.k, el.dataset.g); markDirty('invitados'); renderInvitados(); }
@@ -393,6 +466,7 @@
     const g = inv.invitados.find(g => g.id === tr.dataset.id); if (!g) return;
     if (el.dataset.gf) g[el.dataset.gf] = el.value; else if (el.dataset.gx) g.extra[el.dataset.gx] = el.value; else return;
     markDirty('invitados');
+    if (el.classList.contains('cell-text')) autosize(el.closest('tr'));
     if (el.dataset.gf === 'subgrupo' || el.tagName === 'SELECT') retint(el);
     refreshGuestStats();
   }
@@ -627,6 +701,7 @@
     document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === current));
     document.querySelectorAll('.tab').forEach(s => s.hidden = s.id !== (current === 'respuestas' ? 'tab-respuestas' : 'tab-' + current));
     $('#actions-resp').hidden = current !== 'respuestas';
+    updateUndoButtons();
     try {
       if (current !== 'respuestas') { const tabEl = $('#tab-' + current); if (!tabEl.innerHTML.trim()) tabEl.innerHTML = '<p class="muted">Cargando…</p>'; }
       await Promise.all(tab.need.map(n => loadSec(n)));
@@ -640,6 +715,13 @@
   document.querySelector('.tabs').addEventListener('click', e => { const b = e.target.closest('button[data-tab]'); if (!b) return; current = b.dataset.tab; history.replaceState(null, '', '#' + current); render(); });
 
   let scrollTimer; window.addEventListener('scroll', () => { clearTimeout(scrollTimer); scrollTimer = setTimeout(() => ssSet('scroll-' + current, window.scrollY), 200); }, { passive: true });
+
+  document.addEventListener('keydown', e => {
+    if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== 'z') return;
+    if (/^(INPUT|TEXTAREA)$/.test(e.target.tagName) && e.target.type !== 'checkbox') return;   // dentro de una celda se usa el deshacer normal
+    e.preventDefault(); e.shiftKey ? redo() : undo();
+  });
+  $('#undo').onclick = undo; $('#redo').onclick = redo;
 
   /* ---------- eventos delegados ---------- */
   const handlers = { invitados: invitadosClick, mesas: mesasEvent, presupuesto: presupuestoEvent, proveedores: proveedoresEvent, tareas: tareasEvent };

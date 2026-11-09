@@ -156,6 +156,19 @@
       .fchip b{margin-left:5px;font-weight:500;opacity:.6}.fchip:hover{opacity:1}
       .fchip.on{opacity:1;border-color:var(--dark);box-shadow:0 0 0 1px var(--dark) inset;font-weight:600}
       @media(max-width:720px){.frow{flex-direction:column;gap:4px}}
+      .undo{display:inline-flex;gap:6px}
+      /* Botones de las barras: mismo tamaño, tipo y alineación */
+      .toolbar .primary,.toolbar .secondary,label.filebtn{display:inline-flex;align-items:center;justify-content:center;height:36px;padding:0 16px;border-radius:18px;font:500 13.5px "DM Sans",sans-serif;line-height:1;white-space:nowrap;cursor:pointer;width:auto;margin:0}
+      .toolbar .primary{border:1px solid var(--green)}
+      label.filebtn input{display:none}
+      .toolbar .secondary:hover,label.filebtn:hover{background:rgba(115,123,84,.1)}
+      .toolbar .primary:hover{background:var(--dark)}
+      .toolbar{gap:8px 8px}
+      .toolbar>input[type=search]{height:36px;border-radius:18px;padding:0 16px;width:min(260px,100%)}
+      .mini:disabled{opacity:.4}
+      textarea.cell-text{display:block;width:100%;min-width:240px;max-width:420px;min-height:30px;resize:none;overflow:hidden;white-space:pre-wrap;word-break:break-word;line-height:1.35;padding:5px 8px;border:1px solid transparent;border-radius:4px;background:transparent;font:13px/1.35 "DM Sans",system-ui,sans-serif;color:var(--dark)}
+      textarea.cell-text:hover{border-color:var(--line)}textarea.cell-text:focus{background:#fffdf7;border-color:var(--green);outline:0}
+      table.edit td{vertical-align:top}
       @media print{body *{visibility:hidden}#tab-mesas,#tab-mesas *{visibility:visible}#tab-mesas{position:absolute;left:0;top:0;width:100%}.toolbar,.assoc,.seats select{display:none!important}}
     </style>
   </head>
@@ -176,6 +189,7 @@
       <div class="panel-head">
         <h1>Gestión de la boda</h1>
         <div class="actions">
+          <span id="undo-wrap" class="undo" hidden><button type="button" id="undo" class="mini" disabled>↶ Deshacer</button><button type="button" id="redo" class="mini" disabled>↷ Rehacer</button></span>
           <span id="save-state" role="status"></span>
           <button class="secondary" id="logout" type="button">Cerrar sesión</button>
         </div>
@@ -228,7 +242,7 @@
       </dialog>
     </main>
 
-    <script src="/gestion-data.js?v=8"></script>
-    <script src="/admin.js?v=8"></script>
+    <script src="/gestion-data.js?v=10"></script>
+    <script src="/admin.js?v=10"></script>
   </body>
 </html>
