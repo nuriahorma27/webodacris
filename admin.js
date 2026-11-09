@@ -748,19 +748,19 @@
     const adultos = guests.filter(g => g.tipo === 'Adulto' && g.viene !== 'No').length, ninos = guests.filter(g => g.tipo === 'Niño' && g.viene !== 'No').length;
     const faltan = Object.keys(D.CATEGORIAS_ESTANDAR).filter(c => !catsOf(partidas).includes(c));
     $('#tab-presupuesto').innerHTML = `<div class="stats" id="p-totals"></div>
-      <div class="toolbar"><select id="p-addcat">${opts(faltan, '', '＋ Añadir categoría…')}<option value="__new">Categoría propia…</option></select><span class="grow"></span><span class="muted">📅 La fecha de pago se pone en la última columna de cada partida.</span><button class="secondary" data-act="p-reset">Restaurar partidas estándar</button></div>
+      <div class="toolbar"><select id="p-addcat">${opts(faltan, '', '＋ Añadir categoría…')}<option value="__new">Categoría propia…</option></select><span class="grow"></span><span class="muted">📅 En la última columna pon, por partida, el mes y la cantidad de cada pago.</span><button class="secondary" data-act="p-reset">Restaurar partidas estándar</button></div>
       ${catsOf(partidas).map(cat => `<section class="cat" data-cat="${esc(cat)}"><div class="cat-head"><h3>${esc(cat)}</h3><span class="muted" data-sub></span><span class="grow"></span><button class="link" data-act="p-ren">Renombrar</button><button class="link" data-act="p-up">▲</button><button class="link" data-act="p-down">▼</button><button class="delete" data-act="p-delcat" aria-label="Eliminar categoría">${TRASH}</button></div>
-        <div class="table-wrap"><table class="edit"><thead><tr><th>Concepto</th><th>Proveedor</th><th>Estimado</th><th>Pagado</th><th class="th-pago">📅 Fecha de pago</th><th></th></tr></thead><tbody>${partidas.filter(p => p.categoria === cat).map(p => `<tr data-id="${p.id}" class="${rowPago(p)}"><td><input data-pf="concepto" value="${esc(p.concepto)}" /></td><td><input data-pf="proveedor" value="${esc(p.proveedor)}" /></td>
+        <div class="table-wrap"><table class="edit"><thead><tr><th>Concepto</th><th>Proveedor</th><th>Estimado</th><th>Pagado</th><th class="th-pago">📅 Pagos por mes</th><th></th></tr></thead><tbody>${partidas.filter(p => p.categoria === cat).map(p => `<tr data-id="${p.id}" class="${rowPago(p)}"><td><input data-pf="concepto" value="${esc(p.concepto)}" /></td><td><input data-pf="proveedor" value="${esc(p.proveedor)}" /></td>
           <td>${p.tipo === 'menu' ? `<span class="menu"><input data-pf="precioUnidad" data-num type="number" min="0" step="any" value="${p.precioUnidad || ''}" placeholder="€/pers." class="w80" /> × <input data-pf="cantidad" data-num type="number" min="0" value="${p.cantidad || ''}" placeholder="nº" class="w60" /><button class="link" data-act="p-fill" title="Usar los invitados que vienen">${p.concepto === 'Menú niños' ? ninos : adultos} pers.</button> = <b data-est>${eur(estimadoDe(p))}</b></span>` : `<input data-pf="estimado" data-num type="number" min="0" step="any" value="${p.estimado || ''}" class="w100" />`}</td>
-          <td><input data-pf="pagado" data-num type="number" min="0" step="any" value="${p.pagado || ''}" class="w100" /></td><td class="pago"><input data-pf="fechaPago" type="date" value="${esc(p.fechaPago || '')}" /></td><td class="actions-cell"><button class="delete" data-act="p-del" aria-label="Eliminar">${TRASH}</button></td></tr>`).join('')}</tbody></table></div>
+          <td>${p.pagos?.length ? `<span class="calc" title="Suma de los pagos marcados como pagados">${eur(pagadoDe(p))}</span>` : `<input data-pf="pagado" data-num type="number" min="0" step="any" value="${p.pagado || ''}" class="w100" />`}</td><td class="pago">${pagosCell(p)}</td><td class="actions-cell"><button class="delete" data-act="p-del" aria-label="Eliminar">${TRASH}</button></td></tr>`).join('')}</tbody></table></div>
         <button class="link" data-act="p-add">＋ Añadir partida</button></section>`).join('')}`;
     updateTotals();
   }
   function updateTotals() {
-    const { partidas } = SEC.presupuesto.data, t = partidas.reduce((a, p) => ({ e: a.e + estimadoDe(p), p: a.p + (Number(p.pagado) || 0) }), { e: 0, p: 0 });
-    const prox = partidas.filter(p => p.fechaPago && pendienteDe(p) > 0).sort((a, b) => a.fechaPago.localeCompare(b.fechaPago))[0];
-    $('#p-totals').innerHTML = [[eur(t.e), 'presupuesto estimado'], [eur(t.p), 'pagado'], [eur(t.e - t.p), 'pendiente de pagar'], [prox ? fechaCorta(prox.fechaPago) : '—', prox ? `próximo pago · ${esc(prox.concepto || prox.categoria)} (${eur(pendienteDe(prox))})` : 'próximo pago · pon la 📅 fecha de pago en cada partida']].map(([n, l]) => `<div class="stat"><strong>${n}</strong><span>${l}</span></div>`).join('');
-    document.querySelectorAll('#tab-presupuesto .cat').forEach(sec => { const ps = partidas.filter(p => p.categoria === sec.dataset.cat); sec.querySelector('[data-sub]').textContent = `${eur(ps.reduce((s, p) => s + estimadoDe(p), 0))} estimado · ${eur(ps.reduce((s, p) => s + (Number(p.pagado) || 0), 0))} pagado`; });
+    const { partidas } = SEC.presupuesto.data, t = partidas.reduce((a, p) => ({ e: a.e + estimadoDe(p), p: a.p + pagadoDe(p) }), { e: 0, p: 0 });
+    const todos = partidas.flatMap(p => (p.pagos || []).filter(x => x.mes && !x.pagado).map(x => ({ p, x }))).sort((a, b) => a.x.mes.localeCompare(b.x.mes)), prox = todos[0];
+    $('#p-totals').innerHTML = [[eur(t.e), 'presupuesto estimado'], [eur(t.p), 'pagado'], [eur(t.e - t.p), 'pendiente de pagar'], [prox ? mesNombre(prox.x.mes) : '—', prox ? `próximo pago · ${esc(prox.p.concepto || prox.p.categoria)}${Number(prox.x.cantidad) ? ` (${eur(prox.x.cantidad)})` : ''}` : 'próximo pago · añade «mes y cantidad» en cada partida']].map(([n, l]) => `<div class="stat"><strong>${n}</strong><span>${l}</span></div>`).join('');
+    document.querySelectorAll('#tab-presupuesto .cat').forEach(sec => { const ps = partidas.filter(p => p.categoria === sec.dataset.cat); sec.querySelector('[data-sub]').textContent = `${eur(ps.reduce((s, p) => s + estimadoDe(p), 0))} estimado · ${eur(ps.reduce((s, p) => s + pagadoDe(p), 0))} pagado`; });
   }
   async function presupuestoEvent(act, el, ev) {
     const data = SEC.presupuesto.data, cat = el.closest('[data-cat]')?.dataset.cat, row = el.closest('tr[data-id]'), p = row && data.partidas.find(p => p.id === row.dataset.id);
@@ -772,8 +772,18 @@
     else if (act === 'p-delcat') { if (await ask(`Se eliminará la categoría «${cat}» con todas sus partidas.`)) { data.partidas = data.partidas.filter(x => x.categoria !== cat); markDirty('presupuesto'); renderPresupuesto(); } }
     else if (act === 'p-ren') { const n = (prompt('Nuevo nombre de la categoría:', cat) || '').trim(); if (n && n !== cat) { data.partidas.forEach(x => { if (x.categoria === cat) x.categoria = n; }); markDirty('presupuesto'); renderPresupuesto(); } }
     else if (act === 'p-up' || act === 'p-down') { const order = catsOf(data.partidas), i = order.indexOf(cat), j = i + (act === 'p-up' ? -1 : 1); if (j < 0 || j >= order.length) return; [order[i], order[j]] = [order[j], order[i]]; data.partidas = order.flatMap(c => data.partidas.filter(x => x.categoria === c)); markDirty('presupuesto'); renderPresupuesto(); }
+    else if (act === 'p-addpago') { p.pagos = p.pagos || []; const last = p.pagos.map(x => x.mes).filter(Boolean).sort().pop(), resto = Math.max(0, estimadoDe(p) - programadoDe(p)); p.pagos.push({ id: uid(), mes: last ? nextMonth(last) : ISO(new Date()).slice(0, 7), cantidad: resto || '', pagado: false }); markDirty('presupuesto'); renderPresupuesto(); }
+    else if (act === 'p-delpago') { p.pagos = p.pagos.filter(x => x.id !== el.closest('[data-pgid]').dataset.pgid); markDirty('presupuesto'); renderPresupuesto(); }
+    else if (el.dataset.pg && p) {
+      const x = p.pagos.find(x => x.id === el.closest('[data-pgid]').dataset.pgid); if (!x) return;
+      x[el.dataset.pg] = el.type === 'checkbox' ? el.checked : el.dataset.pg === 'cantidad' ? Number(el.value) || 0 : el.value;
+      markDirty('presupuesto'); updateTotals();
+      const rc = rowPago(p); row.classList.remove('vence-ya', 'vence-mes'); if (rc) row.classList.add(rc);
+      // Solo se vuelve a dibujar al marcar «Pagado» (cambia el total pagado); con mes y cantidad no, para no perder el clic en el botón siguiente.
+      if (ev === 'change' && el.type === 'checkbox') renderPresupuesto();
+    }
     else if (act === 'p-fill') { p.cantidad = guests.filter(g => g.tipo === (p.concepto === 'Menú niños' ? 'Niño' : 'Adulto') && g.viene !== 'No').length; markDirty('presupuesto'); renderPresupuesto(); }
-    else if (el.dataset.pf && p) { p[el.dataset.pf] = el.dataset.num !== undefined ? Number(el.value) || 0 : el.value; markDirty('presupuesto'); if (el.dataset.pf === 'fechaPago' && ev === 'change') return renderPresupuesto(); if (p.tipo === 'menu') row.querySelector('[data-est]').textContent = eur(estimadoDe(p)); updateTotals(); }
+    else if (el.dataset.pf && p) { p[el.dataset.pf] = el.dataset.num !== undefined ? Number(el.value) || 0 : el.value; markDirty('presupuesto'); if (p.tipo === 'menu') row.querySelector('[data-est]').textContent = eur(estimadoDe(p)); updateTotals(); }
   }
 
   /* ================= TAREAS ================= */
@@ -871,22 +881,27 @@
     });
   }
   const ISO = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  const fechaCorta = iso => { const [y, m, d] = iso.split('-'); return `${d}/${m}/${y}`; };
-  // Partidas del presupuesto con fecha de pago este mes (o ya pasada) y algo pendiente de pagar.
-  const pendienteDe = p => Math.max(0, estimadoDe(p) - (Number(p.pagado) || 0));
+  const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+  const mesNombre = ym => { const [y, m] = ym.split('-'); return `${MESES[Number(m) - 1] || ym} ${y}`; };
+  const nextMonth = ym => { const [y, m] = ym.split('-').map(Number); return m === 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, '0')}`; };
+  // Pagos programados de cada partida: [{ mes: '2026-10', cantidad: 200, pagado: false }]. Con pagos, «Pagado» es la suma de los marcados.
+  const pagadoDe = p => (p.pagos?.length ? p.pagos.filter(x => x.pagado).reduce((s, x) => s + (Number(x.cantidad) || 0), 0) : Number(p.pagado) || 0);
+  const pendienteDe = p => Math.max(0, estimadoDe(p) - pagadoDe(p));
+  const programadoDe = p => (p.pagos || []).reduce((s, x) => s + (Number(x.cantidad) || 0), 0);
+  // Pagos sin pagar de este mes o de meses anteriores.
   function pagosPendientes() {
     if (!SEC.presupuesto) return [];
-    const hoy = ISO(new Date()), mes = hoy.slice(0, 7);
-    return SEC.presupuesto.data.partidas.filter(p => p.fechaPago && pendienteDe(p) > 0 && p.fechaPago.slice(0, 7) <= mes)
-      .map(p => ({ nombre: p.concepto || p.categoria || '(sin nombre)', proveedor: p.proveedor, fecha: p.fechaPago, importe: pendienteDe(p), vencido: p.fechaPago < hoy }))
-      .sort((x, y) => x.fecha.localeCompare(y.fecha));
+    const mes = ISO(new Date()).slice(0, 7), out = [];
+    for (const p of SEC.presupuesto.data.partidas) for (const x of p.pagos || []) if (x.mes && !x.pagado && x.mes <= mes) out.push({ nombre: p.concepto || p.categoria || '(sin nombre)', proveedor: p.proveedor, mes: x.mes, importe: Number(x.cantidad) || 0, vencido: x.mes < mes });
+    return out.sort((x, y) => x.mes.localeCompare(y.mes));
   }
-  const rowPago = p => { if (!p.fechaPago || pendienteDe(p) <= 0) return ''; const hoy = ISO(new Date()); return p.fechaPago < hoy ? 'vence-ya' : p.fechaPago.slice(0, 7) === hoy.slice(0, 7) ? 'vence-mes' : ''; };
+  const rowPago = p => { const mes = ISO(new Date()).slice(0, 7), pend = (p.pagos || []).filter(x => x.mes && !x.pagado && x.mes <= mes); return pend.some(x => x.mes < mes) ? 'vence-ya' : pend.length ? 'vence-mes' : ''; };
+  const pagosCell = p => `<div class="pagos">${(p.pagos || []).map(x => `<div class="pg${x.pagado ? ' ok' : ''}" data-pgid="${x.id}"><input type="month" data-pg="mes" value="${esc(x.mes)}" aria-label="Mes" /><input type="number" data-pg="cantidad" min="0" step="any" placeholder="€" value="${x.cantidad || ''}" aria-label="Cantidad" /><label class="pgpaid"><input type="checkbox" data-pg="pagado"${x.pagado ? ' checked' : ''} /> Pagado</label><button type="button" class="x2" data-act="p-delpago" aria-label="Quitar este pago">×</button></div>`).join('')}<button type="button" class="link" data-act="p-addpago">＋ Mes y cantidad</button></div>`;
   function renderAlerts() {
     const box = $('#alerts'); if (!box) return;
     const list = pagosPendientes();
     box.innerHTML = list.length ? `<div class="alert ${list.some(p => p.vencido) ? 'bad' : 'warn'}" role="alert"><div><strong>⚠ ${list.some(p => p.vencido) ? 'Hay pagos vencidos o de este mes' : 'Este mes toca pagar'}</strong>
-      <ul>${list.map(p => `<li class="${p.vencido ? 'venc' : ''}"><b>${esc(p.nombre)}</b>${p.proveedor ? ` (${esc(p.proveedor)})` : ''} · ${fechaCorta(p.fecha)} · ${eur(p.importe)} pendiente${p.vencido ? ' · <em>vencido</em>' : ''}</li>`).join('')}</ul></div>
+      <ul>${list.map(p => `<li class="${p.vencido ? 'venc' : ''}"><b>${esc(p.nombre)}</b>${p.proveedor ? ` (${esc(p.proveedor)})` : ''} · ${mesNombre(p.mes)}${p.importe ? ` · ${eur(p.importe)}` : ''}${p.vencido ? ' · <em>vencido</em>' : ''}</li>`).join('')}</ul></div>
       ${current === 'presupuesto' ? '' : '<button class="mini solid" data-go="presupuesto">Ver presupuesto</button>'}</div>` : '';
   }
   function renderProveedores() {
