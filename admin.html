@@ -2,7 +2,8 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" id="vp" content="width=device-width, initial-scale=1.0" />
+    <script>try{if(localStorage.getItem("boda-modo")==="ordenador")document.getElementById("vp").content="width=1200"}catch(e){}</script>
     <meta name="robots" content="noindex, nofollow" />
     <title>Gestión · Boda Cris y Pela</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -158,6 +159,7 @@
       .fchip.on{opacity:1;border-color:var(--dark);box-shadow:0 0 0 1px var(--dark) inset;font-weight:600}
       @media(max-width:720px){.frow{flex-direction:column;gap:4px}}
       .undo{display:inline-flex;gap:6px}
+      #modo{height:34px;padding:0 14px;border-radius:17px;font:500 13px "DM Sans",sans-serif;width:auto}
       /* Botones de las barras: mismo tamaño, tipo y alineación */
       .toolbar .primary,.toolbar .secondary,label.filebtn{display:inline-flex;align-items:center;justify-content:center;height:36px;padding:0 16px;border-radius:18px;font:500 13.5px "DM Sans",sans-serif;line-height:1;white-space:nowrap;cursor:pointer;width:auto;margin:0}
       .toolbar .primary{border:1px solid var(--green)}
@@ -312,6 +314,7 @@
         <h1>Gestión de la boda</h1>
         <div class="actions">
           <span id="undo-wrap" class="undo" hidden><button type="button" id="undo" class="mini" disabled>↶ Deshacer</button><button type="button" id="redo" class="mini" disabled>↷ Rehacer</button></span>
+          <button type="button" id="modo" class="secondary" hidden></button>
           <span id="save-state" role="status"></span>
           <button class="secondary" id="logout" type="button">Cerrar sesión</button>
         </div>
@@ -372,7 +375,7 @@
       </dialog>
     </main>
 
-    <script src="/gestion-data.js?v=28"></script>
-    <script src="/admin.js?v=28"></script>
+    <script src="/gestion-data.js?v=29"></script>
+    <script src="/admin.js?v=29"></script>
   </body>
 </html>

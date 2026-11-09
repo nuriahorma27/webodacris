@@ -1015,6 +1015,18 @@
   document.addEventListener('input', e => onField(e, 'input'));
   document.addEventListener('change', e => onField(e, 'change'));
 
+  /* ---------- modo tablet / modo ordenador (en pantallas táctiles) ---------- */
+  (() => {
+    const btn = $('#modo'); if (!btn) return;
+    const touch = window.matchMedia('(pointer: coarse)').matches || Math.min(screen.width, screen.height) <= 1100;
+    if (!touch) return;
+    let modo = 'tablet'; try { modo = localStorage.getItem('boda-modo') === 'ordenador' ? 'ordenador' : 'tablet'; } catch { /* sin almacenamiento */ }
+    btn.hidden = false;
+    btn.textContent = modo === 'ordenador' ? '📱 Modo tablet' : '🖥 Modo ordenador';
+    btn.title = modo === 'ordenador' ? 'Volver a la vista adaptada a la pantalla' : 'Ver la página completa, como en un ordenador';
+    btn.onclick = () => { try { localStorage.setItem('boda-modo', modo === 'ordenador' ? 'tablet' : 'ordenador'); } catch { /* sin almacenamiento */ } location.reload(); };
+  })();
+
   /* ---------- sesión ---------- */
   async function start() {
     // Se comprueba el acceso con la sección de invitados (que hace falta de todos modos); las respuestas se cargan después.
