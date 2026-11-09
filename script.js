@@ -212,3 +212,22 @@ weddingForm?.addEventListener('submit',async event=>{
     submitButton.disabled=false;
   }
 });
+
+// Cuenta atrás hasta la ceremonia: sábado 24 de julio de 2027, 13:00 (hora de España, CEST = UTC+2).
+(()=>{
+  const box=document.querySelector('#countdown'); if(!box) return;
+  const target=Date.parse('2027-07-24T13:00:00+02:00');
+  const cells=Object.fromEntries([...box.querySelectorAll('[data-unit]')].map(e=>[e.dataset.unit,e]));
+  const pad=n=>String(n).padStart(2,'0');
+  function tick(){
+    const diff=target-Date.now();
+    if(diff<=0){box.classList.add('done');return false;}
+    const s=Math.floor(diff/1000);
+    cells.dias.textContent=Math.floor(s/86400);
+    cells.horas.textContent=pad(Math.floor(s%86400/3600));
+    cells.minutos.textContent=pad(Math.floor(s%3600/60));
+    cells.segundos.textContent=pad(s%60);
+    return true;
+  }
+  if(tick()){const id=setInterval(()=>{if(!tick())clearInterval(id);},1000);}
+})();
