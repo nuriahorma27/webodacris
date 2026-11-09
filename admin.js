@@ -129,7 +129,7 @@
   const FIXED = { si: '#d6e8bd', no: '#f2d0c7', pendiente: '#f7e3c3', 'tal vez': '#f7e3c3', adulto: '#ebe5d3', nino: '#cfdcf2' };
   const hashIdx = v => { let h = 5381; for (const ch of norm(v)) h = ((h << 5) + h + ch.charCodeAt(0)) | 0; return Math.abs(h) % PALETTE.length; };
   const tint = (v, i) => { const k = norm(v); if (!k) return ''; return ` style="background:${FIXED[k] || PALETTE[i !== undefined && i >= 0 ? i % PALETTE.length : hashIdx(v)]}"`; };
-  const guestFilter = { q: '', grupo: '', viene: '' };
+  const guestFilter = { q: '', grupo: '', subgrupo: '', viene: '', tipo: '' };
   const fullName = g => `${g?.nombre || ''} ${g?.apellido || ''}`.trim();
 
   function ensureCol(inv, nombre, tipo = 'texto') {
@@ -157,10 +157,12 @@
   function renderInvitados() {
     const inv = SEC.invitados.data, list = inv.invitados;
     const vinculado = new Set(Object.values(inv.vinculos));
-    const n = f => list.filter(f).length;
-    const stats = [[list.length, 'personas'], [n(g => g.viene === 'Sí'), 'confirmadas'], [n(g => g.viene === 'Pendiente'), 'pendientes'], [n(g => g.viene === 'No'), 'no vienen'], [n(g => g.tipo === 'Adulto' && g.viene !== 'No'), 'adultos'], [n(g => g.tipo === 'Niño' && g.viene !== 'No'), 'niños']];
     const q = norm(guestFilter.q);
-    const shown = list.filter(g => (!q || norm(fullName(g)).includes(q)) && (!guestFilter.grupo || g.grupo === guestFilter.grupo) && (!guestFilter.viene || g.viene === guestFilter.viene));
+    const shown = list.filter(g => (!q || norm(`${fullName(g)} ${g.grupo} ${g.subgrupo}`).includes(q)) && (!guestFilter.grupo || g.grupo === guestFilter.grupo) && (!guestFilter.subgrupo || g.subgrupo === guestFilter.subgrupo) && (!guestFilter.viene || g.viene === guestFilter.viene) && (!guestFilter.tipo || g.tipo === guestFilter.tipo));
+    const filtering = shown.length !== list.length || q || guestFilter.grupo || guestFilter.subgrupo || guestFilter.viene || guestFilter.tipo;
+    const n = f => shown.filter(f).length;
+    const stats = [[shown.length, filtering ? `de ${list.length} · coinciden con el filtro` : 'personas'], [n(g => g.viene === 'Sí'), 'confirmadas'], [n(g => g.viene === 'Pendiente'), 'pendientes'], [n(g => g.viene === 'No'), 'no vienen'], [n(g => g.tipo === 'Adulto' && g.viene !== 'No'), 'adultos'], [n(g => g.tipo === 'Niño' && g.viene !== 'No'), 'niños']];
+    const subgrupos = [...new Set(list.map(g => g.subgrupo).filter(Boolean))].sort((x, y) => x.localeCompare(y, 'es'));
     const cell = (g, c) => {
       const v = g.extra[c.id] ?? '';
       if (c.tipo === 'sino') return `<select data-gx="${c.id}"${tint(v)}>${opts(['Sí', 'No'], v, '—')}</select>`;
@@ -173,7 +175,11 @@
       <div class="toolbar">
         <input type="search" id="g-q" placeholder="Buscar…" value="${esc(guestFilter.q)}" />
         <select id="g-grupo">${opts(inv.grupos, guestFilter.grupo, 'Todos los grupos')}</select>
+        <select id="g-subgrupo">${opts(subgrupos, guestFilter.subgrupo, 'Todos los subgrupos')}</select>
         <select id="g-viene">${opts(VIENE, guestFilter.viene, '¿Viene? (todos)')}</select>
+        <select id="g-tipo">${opts(['Adulto', 'Niño'], guestFilter.tipo, 'Adulto / Niño')}</select>
+        ${filtering ? '<button class="link" data-act="g-clear">Quitar filtros</button>' : ''}
+        <b class="count">${shown.length} de ${list.length}</b>
         <span class="grow"></span>
         <button class="primary" data-act="g-add">＋ Invitado</button>
         <button class="secondary" data-act="g-col">＋ Columna</button>
@@ -303,6 +309,7 @@
     const inv = SEC.invitados.data;
     if (act === 'g-add') { inv.invitados.push(newGuest()); markDirty('invitados'); renderInvitados(); const rows = document.querySelectorAll('#tab-invitados tbody tr'); rows[rows.length - 1]?.querySelector('input')?.focus(); }
     else if (act === 'g-del') { const g = inv.invitados.find(g => g.id === el.dataset.id); if (await ask(`Se eliminará a ${fullName(g) || 'este invitado'}.`)) { inv.invitados = inv.invitados.filter(x => x.id !== g.id); for (const k of Object.keys(inv.vinculos)) if (inv.vinculos[k] === g.id) delete inv.vinculos[k]; markDirty('invitados'); renderInvitados(); } }
+    else if (act === 'g-clear') { Object.assign(guestFilter, { q: '', grupo: '', subgrupo: '', viene: '', tipo: '' }); renderInvitados(); }
     else if (act === 'g-col') colDialog.showModal();
     else if (act === 'g-delcol') { const c = inv.columnas.find(c => c.id === el.dataset.id); if (await ask(`Se quitará la columna «${c.nombre}» con todos sus datos.`, 'Quitar')) { inv.columnas = inv.columnas.filter(x => x.id !== c.id); inv.invitados.forEach(g => delete g.extra[c.id]); markDirty('invitados'); renderInvitados(); } }
     else if (act === 'g-grupos') { $('#dlg-grupos-form').grupos.value = inv.grupos.join('\n'); gruposDialog.showModal(); }
@@ -319,6 +326,8 @@
     if (el.id === 'g-q') { guestFilter.q = el.value; if (isChange) return; const pos = el.selectionStart; renderInvitados(); const n = $('#g-q'); n.focus(); n.setSelectionRange(pos, pos); return; }
     if (el.id === 'g-grupo') { guestFilter.grupo = el.value; return renderInvitados(); }
     if (el.id === 'g-viene') { guestFilter.viene = el.value; return renderInvitados(); }
+    if (el.id === 'g-subgrupo') { guestFilter.subgrupo = el.value; return renderInvitados(); }
+    if (el.id === 'g-tipo') { guestFilter.tipo = el.value; return renderInvitados(); }
     if (el.id === 'g-import') { if (el.files[0]) importExcel(el.files[0]).catch(e => alert(e.message)); el.value = ''; return; }
     if (el.dataset.assoc !== undefined) { if (el.value) { link(el.dataset.assoc, el.value); markDirty('invitados'); renderInvitados(); } return; }
     const tr = el.closest('tr[data-id]'); if (!tr) return;
