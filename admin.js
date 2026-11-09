@@ -287,6 +287,7 @@
   function renderInvitados() {
     const inv = SEC.invitados.data, list = inv.invitados;
     const vinculado = new Set(Object.values(inv.vinculos));
+    const respByKey = new Map((respData?.rows || []).map(r => [respKey(r), r])), respOfGuest = new Map(Object.entries(inv.vinculos).map(([k, gid]) => [gid, respByKey.get(k)]));
     saveFilters();
     const shown = filteredGuests(), filtering = isFiltering(), stats = guestStatsArr(shown);
     const subgrupos = [...new Set(list.map(g => g.subgrupo).filter(Boolean))].sort((x, y) => x.localeCompare(y, 'es'));
@@ -325,7 +326,13 @@
         <td><select data-gf="grupo"${tint(g.grupo, inv.grupos.indexOf(g.grupo))}>${opts(inv.grupos, g.grupo, '—')}</select></td><td><input data-gf="subgrupo" list="dl-sub" value="${esc(g.subgrupo)}"${tint(g.subgrupo)} /></td>
         <td><select data-gf="tipo"${tint(g.tipo)}>${opts(['Adulto', 'Niño'], g.tipo)}</select></td>
         ${inv.columnas.map(c => `<td>${cell(g, c)}</td>`).join('')}
-        <td class="center">${vinculado.has(g.id) ? '<span class="pill ok">✓ asociado</span>' : '<span class="pill">—</span>'}</td>
+        <td class="center">${(() => {
+          if (!vinculado.has(g.id)) return '<span class="pill">sin asociar</span>';
+          const r = respOfGuest.get(g.id);
+          if (!r) return '<span class="pill ok">✓ asociado</span>';
+          const igual = norm(`${r.nombre} ${r.apellidos}`) === norm(fullName(g));
+          return igual ? '<span class="pill ok">✓ asociado</span>' : `<span class="pill warn" title="El cuestionario dice: ${esc(`${r.nombre} ${r.apellidos}`.trim())}">≠ ${esc(`${r.nombre} ${r.apellidos}`.trim())}</span> <button class="mini" data-act="g-usename" data-id="${g.id}" title="Poner el nombre y apellidos del cuestionario">Usar este nombre</button>`;
+        })()}</td>
         <td class="actions-cell"><button class="delete" data-act="g-del" data-id="${g.id}" aria-label="Eliminar">${TRASH}</button></td></tr>`).join('') : `<tr><td class="empty" colspan="${9 + inv.columnas.length}">${list.length ? 'Ningún invitado coincide con el filtro.' : 'Aún no hay invitados. Añádelos, impórtalos desde Excel o asócialos desde el cuestionario.'}</td></tr>`}</tbody></table></div>`;
     if (ssGet('assoc') === '1') renderAssoc();
   }
@@ -524,6 +531,10 @@
     if (act === 'g-add') { inv.invitados.push(newGuest()); fillSino(inv); markDirty('invitados'); renderInvitados(); const rows = document.querySelectorAll('#tab-invitados tbody tr'); rows[rows.length - 1]?.querySelector('input')?.focus(); }
     else if (act === 'g-del') { const g = inv.invitados.find(g => g.id === el.dataset.id); if (await ask(`Se eliminará a ${fullName(g) || 'este invitado'}.`)) { inv.invitados = inv.invitados.filter(x => x.id !== g.id); SEC.mesas.data.mesas.forEach(t => { t.invitados = t.invitados.map(x => (x === g.id ? '' : x)); }); markDirty('mesas'); for (const k of Object.keys(inv.vinculos)) if (inv.vinculos[k] === g.id) delete inv.vinculos[k]; markDirty('invitados'); renderInvitados(); } }
     else if (act === 'g-f') { const k = el.dataset.k; guestFilter[k] = guestFilter[k] === el.dataset.v ? '' : el.dataset.v; if (k === 'grupo' && guestFilter.subgrupo && !inv.invitados.some(g => g.grupo === guestFilter.grupo && g.subgrupo === guestFilter.subgrupo) && guestFilter.grupo) guestFilter.subgrupo = ''; renderInvitados(); }
+    else if (act === 'g-usename') {
+      const g = inv.invitados.find(x => x.id === el.dataset.id), k = Object.keys(inv.vinculos).find(x => inv.vinculos[x] === g.id), r = respData?.rows.find(x => respKey(x) === k);
+      if (g && r) { applyNames(inv, k, g, r); markDirty('invitados'); renderInvitados(); }
+    }
     else if (act === 'g-clear') { Object.assign(guestFilter, { q: '', grupo: '', subgrupo: '', viene: '', tipo: '', bi: '', bid: '', bv: '', bva: '', mesa: '' }); renderInvitados(); }
     else if (act === 'g-col') colDialog.showModal();
     else if (act === 'g-delcol') { const c = inv.columnas.find(c => c.id === el.dataset.id); if (await ask(`Se quitará la columna «${c.nombre}» con todos sus datos.`, 'Quitar')) { inv.columnas = inv.columnas.filter(x => x.id !== c.id); inv.invitados.forEach(g => delete g.extra[c.id]); markDirty('invitados'); renderInvitados(); } }
