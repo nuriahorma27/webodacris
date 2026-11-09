@@ -132,6 +132,23 @@
       table.edit input[data-gf=subgrupo]{min-width:190px}
       table.edit th{padding:9px 10px;white-space:nowrap}
       table.edit tbody tr:hover{background:rgba(115,123,84,.09)}
+      .assoc-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px}
+      .chips{display:flex;gap:6px;flex-wrap:wrap}
+      .chip{padding:4px 12px;border:1px solid var(--line);border-radius:14px;background:#fffdf7;color:var(--dark);font:500 13px "DM Sans",sans-serif}
+      .chip b{margin-left:4px;font-weight:500;opacity:.65}.chip.on{background:var(--green);border-color:var(--green);color:var(--paper)}
+      .mini{padding:5px 13px;border:1px solid var(--line);border-radius:14px;color:var(--dark);background:#fffdf7;font:500 12.5px "DM Sans",sans-serif;cursor:pointer;width:auto}
+      select.mini{max-width:190px;padding:5px 10px}
+      .mini.solid{background:var(--green);border-color:var(--green);color:var(--paper)}.mini.ghost{border-color:transparent;background:transparent;color:var(--green);text-decoration:underline}
+      .mini:disabled{opacity:.45;cursor:default}
+      .assoc-list{max-height:60vh;overflow:auto;background:#fffdf7;border:1px solid var(--line);border-radius:8px}
+      .assoc-row{display:grid;grid-template-columns:38px minmax(150px,1fr) auto;gap:6px 14px;align-items:center;padding:9px 14px;border-bottom:1px solid var(--line)}.assoc-row:last-child{border-bottom:0}
+      .assoc-row.is-linked{background:rgba(196,214,160,.15)}
+      .avatar{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;font:600 12px "DM Sans",sans-serif;color:var(--dark)}
+      .who strong{display:block;font:500 14px "DM Sans",sans-serif;color:var(--dark)}.who small{font-size:12px;opacity:.85}
+      .st{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+      .sug{font-size:13px}.sug.none{opacity:.65;font-style:italic}
+      .pill.no{background:#f3d9d2;border-color:#e0b7ab}
+      @media(max-width:720px){.assoc-row{grid-template-columns:38px 1fr}.st{grid-column:1/-1;justify-content:flex-start}}
       @media print{body *{visibility:hidden}#tab-mesas,#tab-mesas *{visibility:visible}#tab-mesas{position:absolute;left:0;top:0;width:100%}.toolbar,.assoc,.seats select{display:none!important}}
     </style>
   </head>
@@ -204,7 +221,7 @@
       </dialog>
     </main>
 
-    <script src="/gestion-data.js?v=4"></script>
-    <script src="/admin.js?v=4"></script>
+    <script src="/gestion-data.js?v=5"></script>
+    <script src="/admin.js?v=5"></script>
   </body>
 </html>

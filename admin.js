@@ -200,24 +200,30 @@
     renderAssoc();
   }
 
+  let assocFilter = 'review';
   function renderAssoc() {
     const box = $('#assoc'); if (!box) return;
     if (!respData) { box.innerHTML = '<p class="muted">Cargando respuestas…</p>'; return; }
     const inv = SEC.invitados.data;
     if (!respData.rows.length) { box.innerHTML = '<p class="muted">Todavía no hay respuestas del cuestionario.</p>'; return; }
     const byId = Object.fromEntries(inv.invitados.map(g => [g.id, g]));
-    const guestOpts = sel => `<option value="">Elegir invitado…</option>` + inv.invitados.map(g => `<option value="${g.id}"${g.id === sel ? ' selected' : ''}>${esc(fullName(g) || '(sin nombre)')}</option>`).join('');
-    const rows = respData.rows.map(r => {
-      const k = respKey(r), linked = byId[inv.vinculos[k]], sug = !linked && suggestGuest(inv, r);
+    const info = respData.rows.map(r => { const k = respKey(r), linked = byId[inv.vinculos[k]]; return { r, k, linked, sug: !linked && suggestGuest(inv, r) }; });
+    const nLinked = info.filter(i => i.linked).length, nReview = info.length - nLinked, nSug = info.filter(i => i.sug).length;
+    const list = info.filter(i => assocFilter === 'all' || (assocFilter === 'linked' ? i.linked : !i.linked));
+    const guestOpts = `<option value="">Elegir invitado…</option>` + [...inv.invitados].sort((x, y) => fullName(x).localeCompare(fullName(y), 'es')).map(g => `<option value="${g.id}">${esc(fullName(g) || '(sin nombre)')}</option>`).join('');
+    const row = ({ r, k, linked, sug }) => {
+      const name = `${r.nombre} ${r.apellidos}`.trim() || '(sin nombre)';
+      const ini = ((r.nombre || '?')[0] + (r.apellidos || '')[0]).toUpperCase().replace(/UNDEFINED/g, '');
       let st;
-      if (linked) st = `<span class="pill ok">✓ ${esc(fullName(linked))}</span> <button class="link" data-act="a-unlink" data-k="${esc(k)}">Desasociar</button>`;
-      else if (sug) st = `<span class="pill warn">¿${esc(fullName(sug))}?</span> <button class="secondary sm" data-act="a-accept" data-k="${esc(k)}" data-g="${sug.id}">Aceptar</button> <select data-assoc="${esc(k)}">${guestOpts('')}</select>`;
-      else st = `<select data-assoc="${esc(k)}">${guestOpts('')}</select> <button class="secondary sm" data-act="a-create" data-k="${esc(k)}">Crear invitado</button>`;
-      return `<tr><td>${esc(r.tipo)}</td><td>${esc(`${r.nombre} ${r.apellidos}`.trim())}</td><td>${esc(r.asistencia)}</td><td class="assoc-cell">${st}</td></tr>`;
-    }).join('');
-    const sugCount = respData.rows.filter(r => !inv.vinculos[respKey(r)] && suggestGuest(inv, r)).length;
-    box.innerHTML = `<div class="toolbar"><button class="secondary sm" data-act="a-auto"${sugCount ? '' : ' disabled'}>Aceptar todas las sugerencias (${sugCount})</button><button class="secondary sm" data-act="a-sync">Actualizar fichas desde el cuestionario</button><button class="secondary sm" data-act="a-reload">Recargar respuestas</button></div>
-      <div class="table-wrap"><table><thead><tr><th>Tipo</th><th>Persona que respondió</th><th>¿Asiste?</th><th>Invitado asociado</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+      if (linked) st = `<span class="pill ok">✓ ${esc(fullName(linked))}</span><button class="mini ghost" data-act="a-unlink" data-k="${esc(k)}">Desasociar</button>`;
+      else if (sug) st = `<span class="sug">¿Es <b>${esc(fullName(sug))}</b>?</span><button class="mini solid" data-act="a-accept" data-k="${esc(k)}" data-g="${sug.id}">Sí, asociar</button><select class="mini" data-assoc="${esc(k)}" aria-label="Elegir otro invitado">${guestOpts.replace('Elegir invitado…', 'Es otra persona…')}</select>`;
+      else st = `<span class="sug none">Sin coincidencia</span><select class="mini" data-assoc="${esc(k)}">${guestOpts}</select><button class="mini" data-act="a-create" data-k="${esc(k)}">＋ Crear invitado</button>`;
+      return `<div class="assoc-row${linked ? ' is-linked' : ''}"><span class="avatar" style="background:${PALETTE[hashIdx(name)]}">${esc(ini)}</span><div class="who"><strong>${esc(name)}</strong><small>${esc(r.tipo)}${r.asistencia ? ` · <span class="pill ${r.asistencia === 'Sí' ? 'ok' : 'no'}">${r.asistencia === 'Sí' ? 'Asiste' : 'No asiste'}</span>` : ''}</small></div><div class="st">${st}</div></div>`;
+    };
+    const chip = (v, label, n) => `<button class="chip${assocFilter === v ? ' on' : ''}" data-act="a-filter" data-v="${v}">${label} <b>${n}</b></button>`;
+    box.innerHTML = `<div class="assoc-bar"><div class="chips">${chip('review', 'Por revisar', nReview)}${chip('linked', 'Asociadas', nLinked)}${chip('all', 'Todas', info.length)}</div><span class="grow"></span>
+      <button class="mini solid" data-act="a-auto"${nSug ? '' : ' disabled'}>Aceptar sugerencias (${nSug})</button><button class="mini" data-act="a-sync" title="Vuelve a copiar dirección, alergias y bus desde el cuestionario">Actualizar fichas</button><button class="mini ghost" data-act="a-reload">↻ Recargar</button></div>
+      <div class="assoc-list">${list.length ? list.map(row).join('') : `<p class="muted center">${assocFilter === 'review' ? '¡Todo asociado! 🎉' : 'Nada que mostrar.'}</p>`}</div>`;
   }
   function link(k, gid) {
     const inv = SEC.invitados.data, r = respData.rows.find(r => respKey(r) === k), g = inv.invitados.find(g => g.id === gid);
@@ -314,6 +320,7 @@
     else if (act === 'g-delcol') { const c = inv.columnas.find(c => c.id === el.dataset.id); if (await ask(`Se quitará la columna «${c.nombre}» con todos sus datos.`, 'Quitar')) { inv.columnas = inv.columnas.filter(x => x.id !== c.id); inv.invitados.forEach(g => delete g.extra[c.id]); markDirty('invitados'); renderInvitados(); } }
     else if (act === 'g-grupos') { $('#dlg-grupos-form').grupos.value = inv.grupos.join('\n'); gruposDialog.showModal(); }
     else if (act === 'g-export') exportGuests().catch(e => alert(e.message));
+    else if (act === 'a-filter') { assocFilter = el.dataset.v; renderAssoc(); }
     else if (act === 'a-accept') { link(el.dataset.k, el.dataset.g); markDirty('invitados'); renderInvitados(); }
     else if (act === 'a-unlink') { delete inv.vinculos[el.dataset.k]; markDirty('invitados'); renderInvitados(); }
     else if (act === 'a-create') { const r = respData.rows.find(r => respKey(r) === el.dataset.k), g = newGuest(r.nombre, r.apellidos); inv.invitados.push(g); link(el.dataset.k, g.id); markDirty('invitados'); renderInvitados(); }
