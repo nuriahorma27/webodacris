@@ -291,6 +291,19 @@
       }
       @media(min-width:640px) and (max-width:900px){table.edit tr{grid-template-columns:repeat(3,1fr)}table.edit td.wide{grid-column:1/-1}}
       @media(max-width:900px){.cat-head [data-act=p-ren]{margin-left:auto}.cat-head .grow{display:none}}
+      /* Pantallas táctiles: bloqueado hasta pulsar «Editar» */
+      .edit-btn{display:none}
+      html.touch .edit-btn{display:inline-flex;align-items:center;height:32px;padding:0 12px;border:1px solid var(--green);border-radius:16px;background:#fffdf7;color:var(--green);font:500 12.5px "DM Sans",sans-serif;cursor:pointer;white-space:nowrap}
+      html.touch .editing>.edit-btn,html.touch .editing .edit-btn{background:var(--green);color:var(--paper)}
+      html.touch tr:not(.editing) input,html.touch tr:not(.editing) select,html.touch tr:not(.editing) textarea{pointer-events:none}
+      html.touch table.edit tr:not(.editing) input:not([type=checkbox]),html.touch table.edit tr:not(.editing) textarea{background:transparent!important;border-color:transparent!important}
+      html.touch table.edit tr:not(.editing) .delete{display:none}
+      html.touch table.edit tr.editing{box-shadow:0 0 0 2px var(--green) inset}
+      html.touch .mcard:not(.editing) .mopts,html.touch .mcard:not(.editing) .delete,html.touch .mcard:not(.editing) .x2{display:none}
+      html.touch .mcard:not(.editing) header input{pointer-events:none}
+      html.touch .mcard.editing{box-shadow:0 0 0 2px var(--green)}
+      html.touch .mcard header .edit-btn{margin-left:auto}
+      @media(max-width:900px){html.touch table.edit td.actions-cell{display:flex;gap:6px;align-items:center}}
       @media print{.mopts,.mfill,.x2,.seatbtn,.seg,.stepper{display:none!important}.mseats li{border:0;background:none;padding:2px 0}.mseats .sn{display:none}}
       @media print{.seat-print{display:block!important;visibility:visible}.alerg{display:none!important}.seats li{break-inside:avoid}}
       @media print{body *{visibility:hidden}#tab-mesas,#tab-mesas *{visibility:visible}#tab-mesas{position:absolute;left:0;top:0;width:100%}.toolbar,.assoc,.seats select{display:none!important}}
@@ -375,7 +388,7 @@
       </dialog>
     </main>
 
-    <script src="/gestion-data.js?v=29"></script>
-    <script src="/admin.js?v=29"></script>
+    <script src="/gestion-data.js?v=30"></script>
+    <script src="/admin.js?v=30"></script>
   </body>
 </html>

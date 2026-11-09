@@ -4,6 +4,9 @@
   'use strict';
   const D = window.GESTION_DATA;
   const $ = (s, r = document) => r.querySelector(s);
+  // En pantallas táctiles todo está bloqueado hasta que se pulsa «Editar» en cada elemento (evita cambios sin querer al tocar o desplazar).
+  try { if (window.matchMedia('(pointer: coarse)').matches) document.documentElement.classList.add('touch'); } catch { /* sin matchMedia */ }
+  const UI_EDIT = new Set();
   const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const uid = () => (crypto.randomUUID ? crypto.randomUUID() : 'id-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8));
   const norm = s => String(s ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
@@ -645,8 +648,8 @@
     const card = m => {
       const ocup = m.invitados.slice(0, m.plazas).filter(id => byId[id]).length, pct = Math.round((ocup / m.plazas) * 100);
       const alerg = m.invitados.slice(0, m.plazas).filter(id => byId[id] && alergiaDe(byId[id])).length;
-      return `<article class="mcard${m.presidencial ? ' pres' : ''}" data-id="${m.id}">
-        <header><span class="mnum">${m.presidencial ? '★' : m.numero}</span><input data-mf="nombre" placeholder="Nombre de la mesa (opcional)" value="${esc(m.nombre)}" /><button class="delete" data-act="m-del" aria-label="Eliminar mesa" title="Eliminar mesa">${TRASH}</button></header>
+      return `<article class="mcard${m.presidencial ? ' pres' : ''}${UI_EDIT.has(m.id) ? ' editing' : ''}" data-id="${m.id}">
+        <header><span class="mnum">${m.presidencial ? '★' : m.numero}</span><input data-mf="nombre" placeholder="Nombre de la mesa (opcional)" value="${esc(m.nombre)}" /><button type="button" class="edit-btn" data-edit aria-label="Editar">${UI_EDIT.has(m.id) ? '✓ Listo' : '✎ Editar'}</button><button class="delete" data-act="m-del" aria-label="Eliminar mesa" title="Eliminar mesa">${TRASH}</button></header>
         <div class="mopts">
           <div class="seg" role="group" aria-label="Forma de la mesa">${Object.entries(TIPOS_MESA).map(([t, [l]]) => `<button class="${m.tipo === t ? 'on' : ''}" data-act="m-type" data-t="${t}">${l}</button>`).join('')}</div>
           <div class="stepper" role="group" aria-label="Plazas"><button data-act="m-plazas" data-d="-1" aria-label="Menos plazas">−</button><span>${m.plazas} plazas</span><button data-act="m-plazas" data-d="1" aria-label="Más plazas">＋</button></div>
@@ -925,6 +928,12 @@
           td.classList.toggle('sec', !!prim && !prim.includes(i) && !td.classList.contains('actions-cell'));
           td.classList.toggle('wide', i === 0 && tabId !== 'tab-invitados');
         });
+        const eid = tr.dataset.id || tr.dataset.auto;
+        if (eid && !tr.querySelector('.edit-btn')) {
+          const host = tr.querySelector('td.actions-cell') || tr.lastElementChild;
+          if (host) host.insertAdjacentHTML('afterbegin', '<button type="button" class="edit-btn" data-edit aria-label="Editar">✎ Editar</button>');
+        }
+        if (eid) { const on = UI_EDIT.has(eid); tr.classList.toggle('editing', on); const eb = tr.querySelector('.edit-btn'); if (eb) eb.textContent = on ? '✓ Listo' : '✎ Editar'; if (on && prim) tr.classList.add('open'); }
         if (prim && !tr.querySelector('.more-td') && !tr.querySelector('.empty')) tr.insertAdjacentHTML('beforeend', '<td class="more-td"><button type="button" class="more-btn" data-more>Más datos ▾</button></td>');
       });
     });
@@ -997,6 +1006,12 @@
   /* ---------- eventos delegados ---------- */
   const handlers = { invitados: invitadosClick, mesas: mesasEvent, presupuesto: presupuestoEvent, proveedores: proveedoresEvent, tareas: tareasEvent };
   document.addEventListener('click', e => {
+    const eb = e.target.closest('[data-edit]');
+    if (eb) {
+      const row = eb.closest('tr, .mcard'), id = row && (row.dataset.id || row.dataset.auto);
+      if (id) { const on = !UI_EDIT.has(id); on ? UI_EDIT.add(id) : UI_EDIT.delete(id); row.classList.toggle('editing', on); eb.textContent = on ? '✓ Listo' : '✎ Editar'; if (on && row.tagName === 'TR' && row.querySelector('.more-td')) { row.classList.add('open'); const mb2 = row.querySelector('.more-btn'); if (mb2) mb2.textContent = 'Menos datos ▴'; } }
+      return;
+    }
     const mb = e.target.closest('[data-more]');
     if (mb) { const tr = mb.closest('tr'); tr.classList.toggle('open'); mb.textContent = tr.classList.contains('open') ? 'Menos datos ▴' : 'Más datos ▾'; return; }
     const el = e.target.closest('[data-act]'); if (!el) return;
