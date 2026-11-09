@@ -89,7 +89,7 @@
       clearTimeout(h.settle); h.settle = setTimeout(() => { h.snap = JSON.stringify(SEC[name].data); h.pending = false; updateUndoButtons(); }, 1000);
       updateUndoButtons();
     }
-    if (name === 'proveedores' || name === 'tareas') renderAlerts();
+    if (name === 'presupuesto') renderAlerts();
     setSave('Guardando…'); clearTimeout(s.timer); s.timer = setTimeout(() => flush(name), 700);
   }
   const TAB_SECTION = { invitados: 'invitados', mesas: 'mesas', presupuesto: 'presupuesto', proveedores: 'proveedores', tareas: 'tareas' };
@@ -750,9 +750,9 @@
     $('#tab-presupuesto').innerHTML = `<div class="stats" id="p-totals"></div>
       <div class="toolbar"><select id="p-addcat">${opts(faltan, '', '＋ Añadir categoría…')}<option value="__new">Categoría propia…</option></select><span class="grow"></span><button class="secondary" data-act="p-reset">Restaurar partidas estándar</button></div>
       ${catsOf(partidas).map(cat => `<section class="cat" data-cat="${esc(cat)}"><div class="cat-head"><h3>${esc(cat)}</h3><span class="muted" data-sub></span><span class="grow"></span><button class="link" data-act="p-ren">Renombrar</button><button class="link" data-act="p-up">▲</button><button class="link" data-act="p-down">▼</button><button class="delete" data-act="p-delcat" aria-label="Eliminar categoría">${TRASH}</button></div>
-        <div class="table-wrap"><table class="edit"><thead><tr><th>Concepto</th><th>Proveedor</th><th>Estimado</th><th>Pagado</th><th></th></tr></thead><tbody>${partidas.filter(p => p.categoria === cat).map(p => `<tr data-id="${p.id}"><td><input data-pf="concepto" value="${esc(p.concepto)}" /></td><td><input data-pf="proveedor" value="${esc(p.proveedor)}" /></td>
+        <div class="table-wrap"><table class="edit"><thead><tr><th>Concepto</th><th>Proveedor</th><th>Estimado</th><th>Pagado</th><th class="th-pago">📅 Fecha de pago</th><th></th></tr></thead><tbody>${partidas.filter(p => p.categoria === cat).map(p => `<tr data-id="${p.id}" class="${rowPago(p)}"><td><input data-pf="concepto" value="${esc(p.concepto)}" /></td><td><input data-pf="proveedor" value="${esc(p.proveedor)}" /></td>
           <td>${p.tipo === 'menu' ? `<span class="menu"><input data-pf="precioUnidad" data-num type="number" min="0" step="any" value="${p.precioUnidad || ''}" placeholder="€/pers." class="w80" /> × <input data-pf="cantidad" data-num type="number" min="0" value="${p.cantidad || ''}" placeholder="nº" class="w60" /><button class="link" data-act="p-fill" title="Usar los invitados que vienen">${p.concepto === 'Menú niños' ? ninos : adultos} pers.</button> = <b data-est>${eur(estimadoDe(p))}</b></span>` : `<input data-pf="estimado" data-num type="number" min="0" step="any" value="${p.estimado || ''}" class="w100" />`}</td>
-          <td><input data-pf="pagado" data-num type="number" min="0" step="any" value="${p.pagado || ''}" class="w100" /></td><td class="actions-cell"><button class="delete" data-act="p-del" aria-label="Eliminar">${TRASH}</button></td></tr>`).join('')}</tbody></table></div>
+          <td><input data-pf="pagado" data-num type="number" min="0" step="any" value="${p.pagado || ''}" class="w100" /></td><td class="pago"><input data-pf="fechaPago" type="date" value="${esc(p.fechaPago || '')}" /></td><td class="actions-cell"><button class="delete" data-act="p-del" aria-label="Eliminar">${TRASH}</button></td></tr>`).join('')}</tbody></table></div>
         <button class="link" data-act="p-add">＋ Añadir partida</button></section>`).join('')}`;
     updateTotals();
   }
@@ -772,7 +772,7 @@
     else if (act === 'p-ren') { const n = (prompt('Nuevo nombre de la categoría:', cat) || '').trim(); if (n && n !== cat) { data.partidas.forEach(x => { if (x.categoria === cat) x.categoria = n; }); markDirty('presupuesto'); renderPresupuesto(); } }
     else if (act === 'p-up' || act === 'p-down') { const order = catsOf(data.partidas), i = order.indexOf(cat), j = i + (act === 'p-up' ? -1 : 1); if (j < 0 || j >= order.length) return; [order[i], order[j]] = [order[j], order[i]]; data.partidas = order.flatMap(c => data.partidas.filter(x => x.categoria === c)); markDirty('presupuesto'); renderPresupuesto(); }
     else if (act === 'p-fill') { p.cantidad = guests.filter(g => g.tipo === (p.concepto === 'Menú niños' ? 'Niño' : 'Adulto') && g.viene !== 'No').length; markDirty('presupuesto'); renderPresupuesto(); }
-    else if (el.dataset.pf && p) { p[el.dataset.pf] = el.dataset.num !== undefined ? Number(el.value) || 0 : el.value; markDirty('presupuesto'); if (p.tipo === 'menu') row.querySelector('[data-est]').textContent = eur(estimadoDe(p)); updateTotals(); }
+    else if (el.dataset.pf && p) { p[el.dataset.pf] = el.dataset.num !== undefined ? Number(el.value) || 0 : el.value; markDirty('presupuesto'); if (el.dataset.pf === 'fechaPago' && ev === 'change') return renderPresupuesto(); if (p.tipo === 'menu') row.querySelector('[data-est]').textContent = eur(estimadoDe(p)); updateTotals(); }
   }
 
   /* ================= TAREAS ================= */
@@ -871,35 +871,32 @@
   }
   const ISO = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   const fechaCorta = iso => { const [y, m, d] = iso.split('-'); return `${d}/${m}/${y}`; };
-  // Pagos que toca hacer este mes o que ya se han pasado (sin pagar).
+  // Partidas del presupuesto con fecha de pago este mes (o ya pasada) y algo pendiente de pagar.
+  const pendienteDe = p => Math.max(0, estimadoDe(p) - (Number(p.pagado) || 0));
   function pagosPendientes() {
-    if (!SEC.proveedores || !SEC.tareas) return [];
-    const hoy = ISO(new Date()), mes = hoy.slice(0, 7), pagos = SEC.proveedores.data.autoPagos || {};
-    const todos = [...autoProveedores().map(p => ({ ...p, ...(pagos[p.id] || {}) })), ...SEC.proveedores.data.manuales];
-    return todos.filter(p => p.fechaPago && !p.pagado && p.estado !== 'Descartado' && p.fechaPago.slice(0, 7) <= mes)
-      .map(p => ({ nombre: p.nombre || p.categoria || '(sin nombre)', fecha: p.fechaPago, importe: Number(p.importe) || 0, vencido: p.fechaPago < hoy }))
+    if (!SEC.presupuesto) return [];
+    const hoy = ISO(new Date()), mes = hoy.slice(0, 7);
+    return SEC.presupuesto.data.partidas.filter(p => p.fechaPago && pendienteDe(p) > 0 && p.fechaPago.slice(0, 7) <= mes)
+      .map(p => ({ nombre: p.concepto || p.categoria || '(sin nombre)', proveedor: p.proveedor, fecha: p.fechaPago, importe: pendienteDe(p), vencido: p.fechaPago < hoy }))
       .sort((x, y) => x.fecha.localeCompare(y.fecha));
   }
+  const rowPago = p => { if (!p.fechaPago || pendienteDe(p) <= 0) return ''; const hoy = ISO(new Date()); return p.fechaPago < hoy ? 'vence-ya' : p.fechaPago.slice(0, 7) === hoy.slice(0, 7) ? 'vence-mes' : ''; };
   function renderAlerts() {
     const box = $('#alerts'); if (!box) return;
     const list = pagosPendientes();
-    box.innerHTML = list.length ? `<div class="alert ${list.some(p => p.vencido) ? 'bad' : 'warn'}" role="alert"><div><strong>⚠ ${list.some(p => p.vencido) ? 'Hay pagos a proveedores vencidos o de este mes' : 'Este mes toca pagar a proveedores'}</strong>
-      <ul>${list.map(p => `<li class="${p.vencido ? 'venc' : ''}"><b>${esc(p.nombre)}</b> · ${fechaCorta(p.fecha)}${p.importe ? ` · ${eur(p.importe)}` : ''}${p.vencido ? ' · <em>vencido</em>' : ''}</li>`).join('')}</ul></div>
-      ${current === 'proveedores' ? '' : '<button class="mini solid" data-go="proveedores">Ver proveedores</button>'}</div>` : '';
+    box.innerHTML = list.length ? `<div class="alert ${list.some(p => p.vencido) ? 'bad' : 'warn'}" role="alert"><div><strong>⚠ ${list.some(p => p.vencido) ? 'Hay pagos vencidos o de este mes' : 'Este mes toca pagar'}</strong>
+      <ul>${list.map(p => `<li class="${p.vencido ? 'venc' : ''}"><b>${esc(p.nombre)}</b>${p.proveedor ? ` (${esc(p.proveedor)})` : ''} · ${fechaCorta(p.fecha)} · ${eur(p.importe)} pendiente${p.vencido ? ' · <em>vencido</em>' : ''}</li>`).join('')}</ul></div>
+      ${current === 'presupuesto' ? '' : '<button class="mini solid" data-go="presupuesto">Ver presupuesto</button>'}</div>` : '';
   }
   function renderProveedores() {
-    const manuales = SEC.proveedores.data.manuales, pagos = SEC.proveedores.data.autoPagos = SEC.proveedores.data.autoPagos || {};
-    const auto = autoProveedores().map(p => ({ ...p, ...(pagos[p.id] || {}) })), all = [...auto, ...manuales];
-    const contr = all.filter(p => p.estado === 'Contratado'), hoy = ISO(new Date()), mes = hoy.slice(0, 7);
-    const cls = p => (p.fechaPago && !p.pagado && p.estado !== 'Descartado' ? (p.fechaPago < hoy ? ' vence-ya' : p.fechaPago.slice(0, 7) === mes ? ' vence-mes' : '') : '');
-    const pagado = contr.filter(p => p.pagado).reduce((s, p) => s + (Number(p.importe) || 0), 0);
-    $('#tab-proveedores').innerHTML = `<div class="stats"><div class="stat"><strong>${all.length}</strong><span>proveedores</span></div><div class="stat"><strong>${contr.length}</strong><span>contratados</span></div><div class="stat"><strong>${eur(contr.reduce((s, p) => s + (Number(p.importe) || 0), 0))}</strong><span>importe contratado</span></div><div class="stat"><strong>${eur(pagado)}</strong><span>ya pagado</span></div></div>
-      <div class="toolbar"><button class="primary" data-act="v-add">＋ Proveedor</button><span class="grow"></span><span class="muted">Pon la fecha de pago y avisará arriba cuando llegue ese mes. Los «Contratado» en Tareas aparecen aquí solos.</span></div>
-      <div class="table-wrap"><table class="edit"><thead><tr><th>Nombre</th><th>Estado</th><th>Importe</th><th class="th-pago">📅 Fecha de pago</th><th class="th-pago">Pagado</th><th>Categoría</th><th>Email</th><th>Teléfono</th><th>Qué incluye / notas</th><th></th></tr></thead><tbody>
-      ${auto.map(p => `<tr class="auto${cls(p)}" data-auto="${esc(p.id)}"><td>${esc(p.nombre)}</td><td><span class="pill ok">Contratado</span></td><td>${eur(p.importe)}</td><td class="pago"><input data-av="fechaPago" type="date" value="${esc(p.fechaPago || '')}" /></td><td class="center pago"><input data-av="pagado" type="checkbox" class="chk-big"${p.pagado ? ' checked' : ''} /></td><td>${esc(p.categoria)}</td><td>${esc(p.email)}</td><td>${esc(p.telefono)}</td><td>${esc(p.incluye)} <span class="muted">(desde la tarea «${esc(p.desde)}»)</span></td><td></td></tr>`).join('')}
-      ${manuales.map(p => `<tr data-id="${p.id}" class="${cls(p).trim()}"><td><input data-vf="nombre" value="${esc(p.nombre)}" /></td><td><select data-vf="estado">${opts(ESTADOS_PROV, p.estado)}</select></td><td><input data-vf="importe" data-num type="number" step="any" value="${p.importe || ''}" class="w100" /></td><td class="pago"><input data-vf="fechaPago" type="date" value="${esc(p.fechaPago || '')}" /></td><td class="center pago"><input data-vf="pagado" type="checkbox" class="chk-big"${p.pagado ? ' checked' : ''} /></td><td><input data-vf="categoria" value="${esc(p.categoria)}" /></td><td><input data-vf="email" type="email" value="${esc(p.email)}" /></td><td><input data-vf="telefono" type="tel" value="${esc(p.telefono)}" /></td><td><input data-vf="incluye" value="${esc(p.incluye)}" /></td><td class="actions-cell"><button class="delete" data-act="v-del" aria-label="Eliminar">${TRASH}</button></td></tr>`).join('')}
-      ${all.length ? '' : '<tr><td class="empty" colspan="10">Aún no hay proveedores. Pulsa «＋ Proveedor» para añadir el primero y ponle su fecha de pago.</td></tr>'}</tbody></table></div>`;
-    renderAlerts();
+    const manuales = SEC.proveedores.data.manuales, auto = autoProveedores(), all = [...auto, ...manuales];
+    const contr = all.filter(p => p.estado === 'Contratado');
+    $('#tab-proveedores').innerHTML = `<div class="stats"><div class="stat"><strong>${all.length}</strong><span>proveedores</span></div><div class="stat"><strong>${contr.length}</strong><span>contratados</span></div><div class="stat"><strong>${eur(contr.reduce((s, p) => s + (Number(p.importe) || 0), 0))}</strong><span>importe contratado</span></div></div>
+      <div class="toolbar"><button class="primary" data-act="v-add">＋ Proveedor</button><span class="grow"></span><span class="muted">Los «Contratado» en Tareas aparecen aquí solos. Las fechas de pago se ponen en Presupuesto.</span></div>
+      <div class="table-wrap"><table class="edit"><thead><tr><th>Nombre</th><th>Estado</th><th>Importe</th><th>Categoría</th><th>Email</th><th>Teléfono</th><th>Qué incluye / notas</th><th></th></tr></thead><tbody>
+      ${auto.map(p => `<tr class="auto"><td>${esc(p.nombre)}</td><td><span class="pill ok">Contratado</span></td><td>${eur(p.importe)}</td><td>${esc(p.categoria)}</td><td>${esc(p.email)}</td><td>${esc(p.telefono)}</td><td>${esc(p.incluye)} <span class="muted">(desde la tarea «${esc(p.desde)}»)</span></td><td></td></tr>`).join('')}
+      ${manuales.map(p => `<tr data-id="${p.id}"><td><input data-vf="nombre" value="${esc(p.nombre)}" /></td><td><select data-vf="estado">${opts(ESTADOS_PROV, p.estado)}</select></td><td><input data-vf="importe" data-num type="number" step="any" value="${p.importe || ''}" class="w100" /></td><td><input data-vf="categoria" value="${esc(p.categoria)}" /></td><td><input data-vf="email" type="email" value="${esc(p.email)}" /></td><td><input data-vf="telefono" type="tel" value="${esc(p.telefono)}" /></td><td><input data-vf="incluye" value="${esc(p.incluye)}" /></td><td class="actions-cell"><button class="delete" data-act="v-del" aria-label="Eliminar">${TRASH}</button></td></tr>`).join('')}
+      ${all.length ? '' : '<tr><td class="empty" colspan="8">Aún no hay proveedores.</td></tr>'}</tbody></table></div>`;
   }
   async function proveedoresEvent(act, el, ev) {
     const data = SEC.proveedores.data, row = el.closest('tr[data-id]'), p = row && data.manuales.find(p => p.id === row.dataset.id), autoRow = el.closest('tr[data-auto]');
@@ -917,7 +914,7 @@
   }
 
   // Vista móvil/tablet: cada fila de las tablas pasa a ser una tarjeta; aquí se etiquetan las celdas y se marcan las secundarias.
-  const PRIMARY = { 'tab-invitados': [0, 1, 2, 3, 4, 5], 'tab-proveedores': [0, 1, 2, 3, 4] };
+  const PRIMARY = { 'tab-invitados': [0, 1, 2, 3, 4, 5], 'tab-proveedores': [0, 1, 2] };
   function labelTables() {
     document.querySelectorAll('.tab:not([hidden]) table.edit').forEach(t => {
       const tabId = t.closest('.tab').id, prim = PRIMARY[tabId], heads = [...t.querySelectorAll('thead th')].map(th => th.textContent.replace('×', '').trim());
