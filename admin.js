@@ -124,6 +124,11 @@
   /* ================= INVITADOS ================= */
   const VIENE = ['Pendiente', 'Sí', 'No'];
   const SUGERIDAS = [['Save the date enviado', 'sino'], ['Invitación enviada', 'sino'], ['Invitación entregada', 'sino'], ['Detalle entregado', 'sino'], ['Menú confirmado', 'sino'], ['Alojamiento reservado', 'sino'], ['Bus ida', 'sino'], ['Bus vuelta', 'sino'], ['Regalo', 'sino'], ['Agradecimiento enviado', 'sino'], ['Hora bus ida', 'texto'], ['Hora bus vuelta', 'texto'], ['Cantidad (regalo)', 'numero'], ['Dirección', 'texto'], ['Alergias', 'texto'], ['Menú', 'texto'], ['Mesa', 'texto'], ['Alojamiento', 'texto'], ['Notas', 'texto']];
+  // Colores de las etiquetas (grupos, subgrupos, sí/no...) para que se lea de un vistazo.
+  const PALETTE = ['#f4d9d4', '#f7e3c3', '#f3ecb8', '#dbe9c0', '#c9e7d9', '#c6e3ea', '#cfdcf2', '#ddd3f0', '#ecd0e6', '#f0d3c0', '#d9dfc2', '#e8d9c0', '#d0e6f0', '#e6d0d0'];
+  const FIXED = { si: '#d6e8bd', no: '#f2d0c7', pendiente: '#f7e3c3', 'tal vez': '#f7e3c3', adulto: '#ebe5d3', nino: '#cfdcf2' };
+  const hashIdx = v => { let h = 5381; for (const ch of norm(v)) h = ((h << 5) + h + ch.charCodeAt(0)) | 0; return Math.abs(h) % PALETTE.length; };
+  const tint = (v, i) => { const k = norm(v); if (!k) return ''; return ` style="background:${FIXED[k] || PALETTE[i !== undefined && i >= 0 ? i % PALETTE.length : hashIdx(v)]}"`; };
   const guestFilter = { q: '', grupo: '', viene: '' };
   const fullName = g => `${g?.nombre || ''} ${g?.apellido || ''}`.trim();
 
@@ -158,8 +163,8 @@
     const shown = list.filter(g => (!q || norm(fullName(g)).includes(q)) && (!guestFilter.grupo || g.grupo === guestFilter.grupo) && (!guestFilter.viene || g.viene === guestFilter.viene));
     const cell = (g, c) => {
       const v = g.extra[c.id] ?? '';
-      if (c.tipo === 'sino') return `<select data-gx="${c.id}">${opts(['Sí', 'No'], v, '—')}</select>`;
-      if (c.tipo === 'lista') return `<select data-gx="${c.id}">${opts((c.opciones || '').split(',').map(s => s.trim()).filter(Boolean), v, '—')}</select>`;
+      if (c.tipo === 'sino') return `<select data-gx="${c.id}"${tint(v)}>${opts(['Sí', 'No'], v, '—')}</select>`;
+      if (c.tipo === 'lista') return `<select data-gx="${c.id}"${tint(v)}>${opts((c.opciones || '').split(',').map(s => s.trim()).filter(Boolean), v, '—')}</select>`;
       return `<input data-gx="${c.id}" type="${c.tipo === 'numero' ? 'number' : 'text'}" value="${esc(v)}" />`;
     };
     const pend = respData ? respData.rows.filter(r => !inv.vinculos[respKey(r)]).length : 0;
@@ -177,12 +182,12 @@
         <button class="secondary" data-act="g-export">Exportar Excel</button>
       </div>
       <details class="assoc" ${pend ? 'open' : ''}><summary>Respuestas del cuestionario ${respData ? `· ${pend} sin asociar de ${respData.rows.length}` : ''}</summary><div id="assoc"></div></details>
-      <div class="table-wrap"><table class="edit"><thead><tr><th>Nombre</th><th>Apellido</th><th>¿Viene?</th><th>Grupo</th><th>Subgrupo</th><th>Tipo</th>${inv.columnas.map(c => `<th>${esc(c.nombre)} <button class="x" data-act="g-delcol" data-id="${c.id}" title="Quitar columna">×</button></th>`).join('')}<th>Cuestionario</th><th></th></tr></thead>
+      <datalist id="dl-sub">${[...new Set(list.map(g => g.subgrupo).filter(Boolean))].sort().map(x => `<option value="${esc(x)}">`).join('')}</datalist><div class="table-wrap"><table class="edit"><thead><tr><th>Nombre</th><th>Apellido</th><th>¿Viene?</th><th>Grupo</th><th>Subgrupo</th><th>Tipo</th>${inv.columnas.map(c => `<th>${esc(c.nombre)} <button class="x" data-act="g-delcol" data-id="${c.id}" title="Quitar columna">×</button></th>`).join('')}<th>Cuestionario</th><th></th></tr></thead>
       <tbody>${shown.length ? shown.map(g => `<tr data-id="${g.id}">
         <td><input data-gf="nombre" value="${esc(g.nombre)}" /></td><td><input data-gf="apellido" value="${esc(g.apellido)}" /></td>
-        <td><select data-gf="viene" class="v-${norm(g.viene)}">${opts(VIENE, g.viene)}</select></td>
-        <td><select data-gf="grupo">${opts(inv.grupos, g.grupo, '—')}</select></td><td><input data-gf="subgrupo" value="${esc(g.subgrupo)}" /></td>
-        <td><select data-gf="tipo">${opts(['Adulto', 'Niño'], g.tipo)}</select></td>
+        <td><select data-gf="viene"${tint(g.viene)}>${opts(VIENE, g.viene)}</select></td>
+        <td><select data-gf="grupo"${tint(g.grupo, inv.grupos.indexOf(g.grupo))}>${opts(inv.grupos, g.grupo, '—')}</select></td><td><input data-gf="subgrupo" list="dl-sub" value="${esc(g.subgrupo)}"${tint(g.subgrupo)} /></td>
+        <td><select data-gf="tipo"${tint(g.tipo)}>${opts(['Adulto', 'Niño'], g.tipo)}</select></td>
         ${inv.columnas.map(c => `<td>${cell(g, c)}</td>`).join('')}
         <td class="center">${vinculado.has(g.id) ? '<span class="pill ok">✓ asociado</span>' : '<span class="pill">—</span>'}</td>
         <td class="actions-cell"><button class="delete" data-act="g-del" data-id="${g.id}" aria-label="Eliminar">${TRASH}</button></td></tr>`).join('') : `<tr><td class="empty" colspan="${8 + inv.columnas.length}">${list.length ? 'Ningún invitado coincide con el filtro.' : 'Aún no hay invitados. Añádelos, impórtalos desde Excel o asócialos desde el cuestionario.'}</td></tr>`}</tbody></table></div>`;
@@ -215,21 +220,51 @@
     inv.vinculos[k] = gid; applyResponse(inv, g, r);
   }
 
+  // Nombres compuestos habituales: "María José Pérez" -> nombre "María José".
+  const COMPUESTOS = ['maria jose', 'jose luis', 'jose maria', 'juan carlos', 'jose antonio', 'jose manuel', 'jose miguel', 'jose ignacio', 'jose angel', 'juan jose', 'juan antonio', 'juan manuel', 'luis miguel', 'miguel angel', 'maria del mar', 'maria del carmen', 'maria luisa', 'maria teresa', 'maria isabel', 'maria eugenia', 'maria elena', 'maria victoria', 'maria angeles', 'ana maria', 'ana isabel', 'ana belen', 'rosa maria', 'carlos alberto', 'francisco javier', 'jose carlos', 'jose ramon', 'jesus maria', 'maria pilar', 'maria dolores', 'maria paz', 'maria jesus'];
+  function splitName(full) {
+    const w = String(full).trim().replace(/\s+/g, ' ').split(' ');
+    if (w.length < 2) return [w[0] || '', ''];
+    const two = norm(w[0] + ' ' + w[1]);
+    const n = w.length > 2 && COMPUESTOS.some(c => two === c) ? 2 : 1;
+    return [w.slice(0, n).join(' '), w.slice(n).join(' ')];
+  }
+  const yesNo = v => { const x = norm(v); return x === 'si' ? 'Sí' : x === 'no' ? 'No' : String(v).trim(); };
+  // Columnas conocidas del Excel de invitados -> columna de la ficha (tipo).
+  const IMPORT_COLS = { 'direccion': ['Dirección', 'texto'], 'alergias': ['Alergias', 'texto'], 'invitacion': ['Invitación entregada', 'sino'], 'regalo': ['Regalo', 'sino'], 'cantidad (regalo)': ['Cantidad (regalo)', 'numero'], 'agradecimientos': ['Agradecimiento enviado', 'sino'], 'agradecimiento': ['Agradecimiento enviado', 'sino'], 'bus ida': ['Bus ida', 'texto'], 'bus vuelta': ['Bus vuelta', 'texto'], 'hora vuelta': ['Hora bus vuelta', 'texto'], 'hora ida': ['Hora bus ida', 'texto'], 'alojamiento': ['Alojamiento', 'texto'], 'menu': ['Menú', 'texto'], 'notas': ['Notas', 'texto'] };
+  const IGNORE_COLS = new Set(['mesas', 'mesa', '']);
   async function importExcel(file) {
     const X = await getXLSX();
     const wb = X.read(await file.arrayBuffer(), { type: 'array' });
-    const rows = X.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: '' }).filter(r => r.some(c => String(c).trim()));
+    const all = X.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: '' });
+    const hi = all.findIndex(r => r.some(c => /^nombre/.test(norm(c))));
+    const head = (hi >= 0 ? all[hi] : []).map(norm), rows = all.slice(hi >= 0 ? hi + 1 : 0).filter(r => r.some(c => String(c).trim()));
     if (!rows.length) return alert('El archivo está vacío.');
-    const head = rows[0].map(norm), hasHead = head.some(h => ['nombre', 'apellido', 'apellidos'].includes(h));
-    const iN = hasHead ? head.indexOf('nombre') : 0, iA = hasHead ? head.findIndex(h => h === 'apellido' || h === 'apellidos') : 1;
-    const inv = SEC.invitados.data, seen = new Set(inv.invitados.map(g => `${norm(g.nombre)}|${norm(g.apellido)}`));
-    let added = 0;
-    for (const r of rows.slice(hasHead ? 1 : 0)) {
-      const nombre = String(r[iN] ?? '').trim(), apellido = String(iA >= 0 ? r[iA] ?? '' : '').trim(), key = `${norm(nombre)}|${norm(apellido)}`;
-      if ((!nombre && !apellido) || seen.has(key)) continue;
-      seen.add(key); inv.invitados.push(newGuest(nombre, apellido)); added++;
+    const col = f => head.findIndex(f);
+    const iFull = col(h => h === 'nombre y apellidos' || h === 'nombre completo'), iN = col(h => h === 'nombre'), iA = col(h => h === 'apellido' || h === 'apellidos');
+    const iViene = col(h => h.replace(/[¿?]/g, '') === 'viene'), iGrupo = col(h => h === 'grupo'), iSub = col(h => h === 'subgrupo'), iTipo = col(h => h.startsWith('adulto'));
+    if (hi < 0 && !(iN >= 0)) { head.length = 0; }
+    const nameCol = iFull >= 0 ? iFull : iN >= 0 ? iN : 0;
+    const inv = SEC.invitados.data, K = g => `${norm(g.nombre)}|${norm(g.apellido)}|${norm(g.grupo)}|${norm(g.subgrupo)}`;
+    const seen = new Set(inv.invitados.map(K));
+    const extras = head.map((h, i) => (i === nameCol || i === iN || i === iA || i === iViene || i === iGrupo || i === iSub || i === iTipo || IGNORE_COLS.has(h) ? null : (IMPORT_COLS[h] || [String(all[hi][i]).trim(), 'texto'])));
+    let added = 0, skipped = 0;
+    for (const r of rows.slice(0)) {
+      let nombre, apellido;
+      if (iFull >= 0 || iA < 0) [nombre, apellido] = splitName(r[nameCol]); else { nombre = String(r[iN] ?? '').trim(); apellido = String(r[iA] ?? '').trim(); }
+      if (!nombre && !apellido) continue;
+      const grupo = iGrupo >= 0 ? String(r[iGrupo]).trim() : '';
+      if (/^novi[oa]s?$/.test(norm(grupo))) { skipped++; continue; }   // la fila de los novios
+      const g = newGuest(nombre, apellido);
+      g.grupo = grupo; g.subgrupo = iSub >= 0 ? String(r[iSub]).trim() : '';
+      if (iTipo >= 0 && /^ni/.test(norm(r[iTipo]))) g.tipo = 'Niño';
+      if (iViene >= 0) { const v = norm(r[iViene]); g.viene = v === 'si' ? 'Sí' : v === 'no' ? 'No' : 'Pendiente'; if (v && !['si', 'no'].includes(v)) g.extra[ensureCol(inv, 'Notas', 'texto')] = String(r[iViene]).trim(); }
+      extras.forEach((c, i) => { const val = String(r[i] ?? '').trim(); if (!c || !val || norm(val) === 'no viene' && c[0] !== 'Dirección' && c[0] !== 'Notas') return; if (norm(val) === 'no viene') return; g.extra[ensureCol(inv, c[0], c[1])] = c[1] === 'sino' ? yesNo(val) : c[1] === 'numero' ? (Number(val) ? String(Number(val)) : '') : val; });
+      if (seen.has(K(g))) { skipped++; continue; }   // ya estaba antes de importar (así se puede repetir la importación sin duplicar)
+      inv.invitados.push(g); added++;
+      if (g.grupo && !inv.grupos.includes(g.grupo)) inv.grupos.push(g.grupo);
     }
-    markDirty('invitados'); renderInvitados(); alert(`Se han añadido ${added} invitados.`);
+    markDirty('invitados'); renderInvitados(); alert(`Se han añadido ${added} invitados.${skipped ? ` Se han omitido ${skipped} (ya estaban o es la fila de los novios).` : ''}`);
   }
   async function exportGuests() {
     const X = await getXLSX(), inv = SEC.invitados.data;
@@ -287,6 +322,7 @@
     const g = inv.invitados.find(g => g.id === tr.dataset.id); if (!g) return;
     if (el.dataset.gf) g[el.dataset.gf] = el.value; else if (el.dataset.gx) g.extra[el.dataset.gx] = el.value; else return;
     markDirty('invitados');
+    if (el.dataset.gf === 'subgrupo') el.style.background = el.value ? PALETTE[hashIdx(el.value)] : '';
     if (isChange && el.tagName === 'SELECT') renderInvitados();
   }
 
