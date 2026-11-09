@@ -235,7 +235,6 @@
   }
   function retint(el) {
     const v = el.value, inv = SEC.invitados.data;
-    if (el.dataset.gx !== undefined && [...el.options].some(o => o.value === 'Sí')) { el.style.background = v === 'Sí' ? '#d6e8bd' : '#f0ece0'; return; }
     const color = !v ? '' : el.dataset.gmesa !== undefined ? PALETTE[hashIdx(String(SEC.mesas.data.mesas.find(t => t.id === v)?.numero))] : el.dataset.gf === 'grupo' ? (FIXED[norm(v)] || PALETTE[Math.max(0, inv.grupos.indexOf(v)) % PALETTE.length]) : (FIXED[norm(v)] || PALETTE[hashIdx(v)]);
     el.style.background = color; if (!color) el.removeAttribute('style');
   }
@@ -293,7 +292,7 @@
     const subgrupos = [...new Set(list.map(g => g.subgrupo).filter(Boolean))].sort((x, y) => x.localeCompare(y, 'es'));
     const cell = (g, c) => {
       const v = g.extra[c.id] ?? '';
-      if (c.tipo === 'sino') return `<select data-gx="${c.id}" style="background:${v === 'Sí' ? '#d6e8bd' : '#f0ece0'}">${opts(['Sí', 'No'], v || 'No')}</select>`;
+      if (c.tipo === 'sino') return `<select data-gx="${c.id}"${tint(v || 'No')}>${opts(['Sí', 'No'], v || 'No')}</select>`;
       if (c.tipo === 'lista') return `<select data-gx="${c.id}"${tint(v)}>${opts((c.opciones || '').split(',').map(s => s.trim()).filter(Boolean), v, '—')}</select>`;
       if (c.tipo === 'numero') return `<input data-gx="${c.id}" type="number" value="${esc(v)}" />`;
       return `<div class="grow" data-v="${esc(v)}"><textarea class="cell-text" rows="1" data-gx="${c.id}" spellcheck="false">${esc(v)}</textarea></div>`;
@@ -352,8 +351,25 @@
     };
     const chip = (v, label, n) => `<button class="chip${assocFilter === v ? ' on' : ''}" data-act="a-filter" data-v="${v}">${label} <b>${n}</b></button>`;
     box.innerHTML = `<div class="assoc-bar"><div class="chips">${chip('review', 'Por revisar', nReview)}${chip('linked', 'Asociadas', nLinked)}${chip('all', 'Todas', info.length)}</div><span class="grow"></span>
-      <button class="mini solid" data-act="a-auto"${nSug ? '' : ' disabled'}>Aceptar sugerencias (${nSug})</button><button class="mini" data-act="a-sync" title="Vuelve a copiar dirección, alergias y bus desde el cuestionario">Actualizar fichas</button><button class="mini ghost" data-act="a-reload">↻ Recargar</button></div>
+      <button class="mini solid" data-act="a-auto"${nSug ? '' : ' disabled'}>Aceptar sugerencias (${nSug})</button><button class="mini" data-act="a-sync" title="Vuelve a copiar nombre, apellidos, dirección, alergias y bus desde el cuestionario">Actualizar fichas</button><button class="mini ghost" data-act="a-reload">↻ Recargar</button></div>
       <div class="assoc-list">${list.length ? list.map(row).join('') : `<p class="muted center">${assocFilter === 'review' ? '¡Todo asociado! 🎉' : 'Nada que mostrar.'}</p>`}</div>`;
+  }
+  // El nombre y los apellidos de la ficha pasan a ser los del cuestionario.
+  function applyNames(inv, k, g, r) {
+    if (r.nombre) g.nombre = r.nombre;
+    if (r.apellidos) g.apellido = r.apellidos;
+    (inv.nombresAplicados = inv.nombresAplicados || {})[k] = true;
+  }
+  // Asociaciones hechas antes de existir esta regla: se aplican una sola vez (luego se respetan tus correcciones a mano).
+  function syncNamesOnce() {
+    if (!respData || !SEC.invitados) return false;
+    const inv = SEC.invitados.data; let changed = false;
+    for (const [k, gid] of Object.entries(inv.vinculos)) {
+      if (inv.nombresAplicados?.[k]) continue;
+      const r = respData.rows.find(x => respKey(x) === k), g = inv.invitados.find(x => x.id === gid);
+      if (r && g) { applyNames(inv, k, g, r); changed = true; }
+    }
+    return changed;
   }
   function link(k, gid) {
     const inv = SEC.invitados.data, r = respData.rows.find(r => respKey(r) === k), g = inv.invitados.find(g => g.id === gid);
@@ -361,8 +377,7 @@
     for (const key of Object.keys(inv.vinculos)) if (inv.vinculos[key] === gid) delete inv.vinculos[key];
     inv.vinculos[k] = gid; applyResponse(inv, g, r);
     // El nombre y los apellidos pasan a ser los que escribió la persona en el cuestionario.
-    if (r.nombre) g.nombre = r.nombre;
-    if (r.apellidos) g.apellido = r.apellidos;
+    applyNames(inv, k, g, r);
   }
 
   // Nombres compuestos habituales: "María José Pérez" -> nombre "María José".
@@ -533,7 +548,7 @@
     else if (act === 'a-unlink') { delete inv.vinculos[el.dataset.k]; markDirty('invitados'); renderInvitados(); }
     else if (act === 'a-create') { const r = respData.rows.find(r => respKey(r) === el.dataset.k), g = newGuest(r.nombre, r.apellidos); inv.invitados.push(g); fillSino(inv); link(el.dataset.k, g.id); markDirty('invitados'); renderInvitados(); }
     else if (act === 'a-auto') { for (const r of respData.rows) { if (inv.vinculos[respKey(r)]) continue; const g = suggestGuest(inv, r); if (g) link(respKey(r), g.id); } markDirty('invitados'); renderInvitados(); }
-    else if (act === 'a-sync') { for (const [k, gid] of Object.entries(inv.vinculos)) { const r = respData.rows.find(r => respKey(r) === k), g = inv.invitados.find(g => g.id === gid); if (r && g) applyResponse(inv, g, r); } markDirty('invitados'); renderInvitados(); }
+    else if (act === 'a-sync') { for (const [k, gid] of Object.entries(inv.vinculos)) { const r = respData.rows.find(r => respKey(r) === k), g = inv.invitados.find(g => g.id === gid); if (r && g) { applyResponse(inv, g, r); applyNames(inv, k, g, r); } } markDirty('invitados'); renderInvitados(); }
     else if (act === 'a-reload') { await loadRespuestas(); renderInvitados(); }
   }
   function invitadosInput(el, isChange) {
@@ -872,7 +887,8 @@
       if (current !== mine) return;                       // se cambió de pestaña mientras cargaba
       tab.render();
       if (saveState.textContent === 'Cargando…') setSave('');
-      if (tab.resp && !respData) loadRespuestas().then(() => { if (current === mine) tab.render(); }).catch(() => {});   // las respuestas llegan después, sin bloquear
+      if (tab.resp && respData && syncNamesOnce()) { markDirty('invitados'); tab.render(); }
+      if (tab.resp && !respData) loadRespuestas().then(() => { if (syncNamesOnce()) markDirty('invitados'); if (current === mine) tab.render(); }).catch(() => {});   // las respuestas llegan después, sin bloquear
       if (firstRender) { firstRender = false; const y = Number(ssGet('scroll-' + current)); if (y) window.scrollTo(0, y); }
     } catch (e) {
       if (e.message === '401') return;
@@ -918,7 +934,7 @@
     try { await loadSec('invitados'); } catch (e) { return e.message === '401' ? undefined : showLogin(e.message || 'No se han podido cargar los datos. Inténtalo más tarde.'); }
     const h = location.hash.slice(1); if (TABS[h]) current = h;
     await render();
-    if (!respData) loadRespuestas().then(() => { if (TABS[current].resp || current === 'respuestas') TABS[current].render(); }).catch(() => {});
+    if (!respData) loadRespuestas().then(() => { if (syncNamesOnce()) markDirty('invitados'); if (TABS[current].resp || current === 'respuestas') TABS[current].render(); }).catch(() => {});
     // El resto de secciones se descargan ya, en segundo plano, para que al cambiar de pestaña salgan al instante.
     ['mesas', 'tareas', 'presupuesto', 'proveedores'].forEach(n => loadSec(n).catch(() => {}));
   }
