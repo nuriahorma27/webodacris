@@ -192,6 +192,7 @@
     if (BUS[field]) return g => extraOf(inv, g, BUS[field][0]);
     return g => g[field];
   }
+  const ui = { fopen: false, mopen: false };
   const FILTER_KEYS = ['grupo', 'subgrupo', 'viene', 'tipo', 'bi', 'bid', 'bv', 'bva', 'mesa'];
   const isFiltering = () => !!(guestFilter.q || FILTER_KEYS.some(k => guestFilter[k]));
   function filteredGuests(f = guestFilter) {
@@ -221,7 +222,8 @@
       + row('Subgrupo', ordered(sg, []).map(x => chip('subgrupo', x, sg.get(x), PALETTE[hashIdx(x)])).join(''))
       + simple('bi', 'Bus de ida', ['Sí', 'No']) + simple('bid', 'Ida desde', ['Gijón', 'Oviedo'])
       + simple('bv', 'Bus de vuelta', ['Sí', 'No']) + simple('bva', 'Vuelta a', ['Gijón', 'Oviedo'])
-      + row('Mesa', mesaChips);
+      + row('Mesa', mesaChips)
+      + `<button class="primary mobonly" data-act="g-fclose">Ver ${filteredGuests().length} invitados</button>`;
   }
   function guestStatsArr(shown) {
     const total = SEC.invitados.data.invitados.length, n = f => shown.filter(f).length;
@@ -232,6 +234,7 @@
     const box = $('#tab-invitados .stats'); if (!box) return;
     box.innerHTML = guestStatsArr(filteredGuests()).map(([x, l]) => `<div class="stat"><strong>${x}</strong><span>${l}</span></div>`).join('');
     const fb = $('#gfilters'); if (fb) fb.innerHTML = filtersHtml();
+    const fc = $('#tab-invitados .fcount'); if (fc) { const n = FILTER_KEYS.filter(k => guestFilter[k]).length; fc.textContent = n ? ` · ${n}` : ''; }
     const c = $('#tab-invitados .count'); if (c) c.textContent = `${filteredGuests().length} de ${SEC.invitados.data.invitados.length}`;
   }
   function retint(el) {
@@ -304,20 +307,24 @@
     const pend = respData ? respData.rows.filter(r => !inv.vinculos[respKey(r)]).length : 0;
     $('#tab-invitados').innerHTML = `
       <div class="stats">${stats.map(([x, l]) => `<div class="stat"><strong>${x}</strong><span>${l}</span></div>`).join('')}</div>
-      <div class="toolbar">
+      <div class="toolbar tb-main">
         <input type="search" id="g-q" placeholder="Buscar…" value="${esc(guestFilter.q)}" />
-        ${filtering ? '<button class="link" data-act="g-clear">Quitar filtros</button>' : ''}
         <b class="count">${shown.length} de ${list.length}</b>
+        ${filtering ? '<button class="link" data-act="g-clear">Quitar filtros</button>' : ''}
+        <button class="secondary fbtn" data-act="g-ftoggle">⚙ Filtros<span class="fcount">${FILTER_KEYS.filter(k => guestFilter[k]).length ? ` · ${FILTER_KEYS.filter(k => guestFilter[k]).length}` : ''}</span></button>
         <span class="grow"></span>
-        <button class="primary" data-act="g-add">＋ Invitado</button>
-        <button class="secondary" data-act="g-col">＋ Columna</button>
-        <button class="secondary" data-act="g-grupos">Grupos</button>
-        <label class="secondary filebtn">Importar Excel<input type="file" id="g-import" accept=".xlsx,.xls,.csv" hidden /></label>
-        <button class="secondary" data-act="alergias" title="Excel con las alergias, ordenadas por mesa">Descargar alergias</button>
-        <button class="secondary" data-act="g-copy" title="Copia lo que ves en la tabla para pegarlo en Excel o Word">Copiar tabla</button>
-        <button class="secondary" data-act="g-export">Exportar Excel</button>
+        <button class="primary" data-act="g-add">＋<span class="hide-m"> Invitado</span></button>
+        <button class="secondary moretoggle" data-act="g-mtoggle" aria-label="Más acciones">⋯</button>
+        <div class="actions-more${ui.mopen ? ' open' : ''}" id="gmore">
+          <button class="secondary" data-act="g-col">＋ Columna</button>
+          <button class="secondary" data-act="g-grupos">Grupos</button>
+          <label class="secondary filebtn">Importar Excel<input type="file" id="g-import" accept=".xlsx,.xls,.csv" hidden /></label>
+          <button class="secondary" data-act="alergias" title="Excel con las alergias, ordenadas por mesa">Descargar alergias</button>
+          <button class="secondary" data-act="g-copy" title="Copia lo que ves en la tabla para pegarlo en Excel o Word">Copiar tabla</button>
+          <button class="secondary" data-act="g-export">Exportar Excel</button>
+        </div>
       </div>
-      <div class="filters" id="gfilters">${filtersHtml()}</div>
+      <div class="filters${ui.fopen ? ' open' : ''}" id="gfilters">${filtersHtml()}</div>
       <details class="assoc" id="assoc-box"${ssGet('assoc') === '1' ? ' open' : ''}><summary>Respuestas del cuestionario ${respData ? `· ${pend} sin asociar de ${respData.rows.length}` : ''}</summary><div id="assoc"></div></details>
       <datalist id="dl-sub">${[...new Set(list.map(g => g.subgrupo).filter(Boolean))].sort().map(x => `<option value="${esc(x)}">`).join('')}</datalist><div class="table-wrap tall"><table class="edit"><thead><tr><th>Nombre</th><th>Apellido</th><th>Cuestionario</th><th>Mesa</th><th>¿Viene?</th><th>Grupo</th><th>Subgrupo</th><th>Tipo</th>${inv.columnas.map(c => `<th>${esc(c.nombre)} <button class="x" data-act="g-delcol" data-id="${c.id}" title="Quitar columna">×</button></th>`).join('')}<th></th></tr></thead>
       <tbody>${shown.length ? shown.map(g => `<tr data-id="${g.id}">
@@ -537,6 +544,9 @@
       const g = inv.invitados.find(x => x.id === el.dataset.id), k = Object.keys(inv.vinculos).find(x => inv.vinculos[x] === g.id), r = respData?.rows.find(x => respKey(x) === k);
       if (g && r) { applyNames(inv, k, g, r); markDirty('invitados'); renderInvitados(); }
     }
+    else if (act === 'g-ftoggle') { ui.fopen = !ui.fopen; ui.mopen = false; $('#gfilters').classList.toggle('open', ui.fopen); $('#gmore').classList.remove('open'); }
+    else if (act === 'g-fclose') { ui.fopen = false; $('#gfilters').classList.remove('open'); }
+    else if (act === 'g-mtoggle') { ui.mopen = !ui.mopen; ui.fopen = false; $('#gmore').classList.toggle('open', ui.mopen); $('#gfilters').classList.remove('open'); }
     else if (act === 'g-clear') { Object.assign(guestFilter, { q: '', grupo: '', subgrupo: '', viene: '', tipo: '', bi: '', bid: '', bv: '', bva: '', mesa: '' }); renderInvitados(); }
     else if (act === 'g-col') colDialog.showModal();
     else if (act === 'g-delcol') { const c = inv.columnas.find(c => c.id === el.dataset.id); if (await ask(`Se quitará la columna «${c.nombre}» con todos sus datos.`, 'Quitar')) { inv.columnas = inv.columnas.filter(x => x.id !== c.id); inv.invitados.forEach(g => delete g.extra[c.id]); markDirty('invitados'); renderInvitados(); } }
@@ -597,20 +607,35 @@
   /* ================= MESAS ================= */
   const TIPOS_MESA = { redonda: ['Redonda', 10], cuadrada: ['Cuadrada', 8], rectangular: ['Rectangular', 14] };
   const initials = g => ((g?.nombre || '?')[0] + (g?.apellido || '')[0]).toUpperCase().replace('UNDEFINED', '');
-  function seatPositions(m) {
-    const n = m.plazas, pts = [];
-    if (m.tipo === 'redonda') { for (let i = 0; i < n; i++) { const a = (i / n) * 2 * Math.PI - Math.PI / 2; pts.push([110 + 62 * Math.cos(a), 75 + 62 * Math.sin(a)]); } return pts; }
-    const W = m.tipo === 'rectangular' ? 150 : 90, H = m.tipo === 'rectangular' ? 46 : 90, x0 = 110 - W / 2, y0 = 75 - H / 2;
-    let rest = n; if (m.tipo === 'rectangular' && m.cabecera && n >= 2) { pts.push([x0 - 18, 75], [x0 + W + 18, 75]); rest -= 2; }
-    const top = Math.ceil(rest / 2), bot = rest - top;
-    for (let i = 0; i < top; i++) pts.push([x0 + (W * (i + 1)) / (top + 1), y0 - 16]);
-    for (let i = 0; i < bot; i++) pts.push([x0 + (W * (i + 1)) / (bot + 1), y0 + H + 16]);
-    return pts;
+  // Geometría de la mesa: el tamaño crece con el número de sillas para que nunca se superpongan (sillas de 10 de radio, separadas 26).
+  function mesaGeom(m) {
+    const n = m.plazas, G = 26, OFF = 17, pts = [];
+    if (m.tipo === 'redonda') {
+      const R = Math.max(56, (n * G) / (2 * Math.PI)), c = R + 22, r = Math.max(32, R - OFF - 5);
+      for (let i = 0; i < n; i++) { const an = (i / n) * 2 * Math.PI - Math.PI / 2; pts.push([c + R * Math.cos(an), c + R * Math.sin(an)]); }
+      return { vw: 2 * c, vh: 2 * c, shape: { t: 'c', cx: c, cy: c, r }, pts };
+    }
+    if (m.tipo === 'cuadrada') {
+      const cnt = [0, 0, 0, 0]; for (let i = 0; i < n; i++) cnt[[0, 2, 1, 3][i % 4]]++;     // arriba, derecha, abajo, izquierda
+      const [top, right, bottom, left] = [cnt[0], cnt[1], cnt[2], cnt[3]], S = Math.max(76, Math.max(top, right, bottom, left) * G + 12), M = 34, vw = S + 2 * M, x0 = M, y0 = M;
+      for (let i = 0; i < top; i++) pts.push([x0 + (S * (i + 1)) / (top + 1), y0 - OFF]);
+      for (let i = 0; i < right; i++) pts.push([x0 + S + OFF, y0 + (S * (i + 1)) / (right + 1)]);
+      for (let i = bottom - 1; i >= 0; i--) pts.push([x0 + (S * (i + 1)) / (bottom + 1), y0 + S + OFF]);
+      for (let i = left - 1; i >= 0; i--) pts.push([x0 - OFF, y0 + (S * (i + 1)) / (left + 1)]);
+      return { vw, vh: vw, shape: { t: 'r', x: x0, y: y0, w: S, h: S }, pts };
+    }
+    const ends = m.cabecera && n >= 2 ? 2 : 0, rest = n - ends, top = Math.ceil(rest / 2), bottom = rest - top, H = 50, M = 34;
+    const W = Math.max(120, Math.max(top, bottom) * G + 14), x0 = M + (ends ? 6 : 0), y0 = M, vw = W + 2 * M + (ends ? 12 : 0), vh = H + 2 * M;
+    for (let i = 0; i < top; i++) pts.push([x0 + (W * (i + 1)) / (top + 1), y0 - OFF]);
+    if (ends) pts.push([x0 + W + OFF, y0 + H / 2]);
+    for (let i = bottom - 1; i >= 0; i--) pts.push([x0 + (W * (i + 1)) / (bottom + 1), y0 + H + OFF]);
+    if (ends) pts.push([x0 - OFF, y0 + H / 2]);
+    return { vw, vh, shape: { t: 'r', x: x0, y: y0, w: W, h: H }, pts };
   }
   function mesaSvg(m, byId) {
-    const pts = seatPositions(m), W = m.tipo === 'rectangular' ? 150 : 90, H = m.tipo === 'rectangular' ? 46 : 90;
-    const shape = m.tipo === 'redonda' ? '<circle cx="110" cy="75" r="40" class="mesa-shape" />' : `<rect x="${110 - W / 2}" y="${75 - H / 2}" width="${W}" height="${H}" rx="4" class="mesa-shape" />`;
-    return `<svg viewBox="0 0 220 150" class="mesa-svg" aria-hidden="true">${shape}<text x="110" y="80" text-anchor="middle" class="mesa-num">${m.presidencial ? '★' : m.numero}</text>${pts.map(([x, y], i) => { const g = byId[m.invitados[i]]; return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="10" class="silla${g ? ' ocupada' : ''}" /><text x="${x.toFixed(1)}" y="${(y + 3.5).toFixed(1)}" text-anchor="middle" class="silla-t">${g ? esc(initials(g)) : i + 1}</text>`; }).join('')}</svg>`;
+    const { vw, vh, shape, pts } = mesaGeom(m), cx = shape.t === 'c' ? shape.cx : shape.x + shape.w / 2, cy = shape.t === 'c' ? shape.cy : shape.y + shape.h / 2;
+    const body = shape.t === 'c' ? `<circle cx="${cx}" cy="${cy}" r="${shape.r}" class="mesa-shape" />` : `<rect x="${shape.x}" y="${shape.y}" width="${shape.w}" height="${shape.h}" rx="6" class="mesa-shape" />`;
+    return `<svg viewBox="0 0 ${vw.toFixed(0)} ${vh.toFixed(0)}" class="mesa-svg" style="max-width:${Math.min(360, Math.round(vw * 1.5))}px" aria-hidden="true">${body}<text x="${cx}" y="${cy + 7}" text-anchor="middle" class="mesa-num">${m.presidencial ? '★' : m.numero}</text>${pts.map(([x, y], i) => { const g = byId[m.invitados[i]]; return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="10" class="silla${g ? ' ocupada' : ''}" /><text x="${x.toFixed(1)}" y="${(y + 3.5).toFixed(1)}" text-anchor="middle" class="silla-t">${g ? esc(initials(g)) : i + 1}</text>`; }).join('')}</svg>`;
   }
   function renderMesas() {
     const guests = SEC.invitados.data.invitados, byId = Object.fromEntries(guests.map(g => [g.id, g])), mesas = SEC.mesas.data.mesas;
@@ -639,8 +664,8 @@
         }).join('')}</ol></article>`;
     };
     $('#tab-mesas').innerHTML = `
-      <div class="stats"><div class="stat"><strong>${mesas.length}</strong><span>mesas</span></div><div class="stat"><strong>${plazas}</strong><span>plazas</span></div><div class="stat"><strong>${seated.size}</strong><span>sentados</span></div><div class="stat"><strong>${sin.length}</strong><span>sin mesa (no cuentan los que no vienen)</span></div><div class="stat"><strong>${conAlergia}</strong><span>sentados con alergia</span></div></div>
-      <div class="toolbar">${Object.entries(TIPOS_MESA).map(([t, [l]]) => `<button class="primary" data-act="m-add" data-t="${t}">＋ Mesa ${l.toLowerCase()}</button>`).join('')}<span class="grow"></span><button class="secondary" data-act="alergias">Descargar alergias</button><button class="secondary" data-act="m-print">Imprimir</button></div>
+      <div class="stats"><div class="stat"><strong>${mesas.length}</strong><span>mesas</span></div><div class="stat"><strong>${plazas}</strong><span>plazas</span></div><div class="stat"><strong>${seated.size}</strong><span>sentados</span></div><div class="stat"><strong>${sin.length}</strong><span title="No cuentan los que no vienen">sin mesa</span></div><div class="stat"><strong>${conAlergia}</strong><span>sentados con alergia</span></div></div>
+      <div class="toolbar">${Object.entries(TIPOS_MESA).map(([t, [l]]) => `<button class="primary" data-act="m-add" data-t="${t}">＋ ${l}</button>`).join('')}<span class="grow"></span><button class="secondary" data-act="alergias">Descargar alergias</button><button class="secondary" data-act="m-print">Imprimir</button></div>
       ${sin.length ? `<details class="assoc"><summary>Invitados sin mesa (${sin.length})</summary><p class="muted">${sin.map(g => esc(fullName(g) || '(sin nombre)')).join(' · ')}</p></details>` : ''}
       <div class="cards">${mesas.length ? [...mesas].sort((a, b) => a.numero - b.numero).map(card).join('') : '<p class="empty">Añade tu primera mesa con los botones de arriba. Los invitados salen de la pestaña Invitados.</p>'}</div>`;
   }
@@ -888,6 +913,22 @@
     }
   }
 
+  // Vista móvil/tablet: cada fila de las tablas pasa a ser una tarjeta; aquí se etiquetan las celdas y se marcan las secundarias.
+  const PRIMARY = { 'tab-invitados': [0, 1, 2, 3, 4, 5], 'tab-proveedores': [0, 4, 5, 6, 7] };
+  function labelTables() {
+    document.querySelectorAll('.tab:not([hidden]) table.edit').forEach(t => {
+      const tabId = t.closest('.tab').id, prim = PRIMARY[tabId], heads = [...t.querySelectorAll('thead th')].map(th => th.textContent.replace('×', '').trim());
+      t.querySelectorAll('tbody tr').forEach(tr => {
+        [...tr.children].forEach((td, i) => {
+          if (td.classList.contains('empty') || td.classList.contains('more-td')) return;
+          td.dataset.label = heads[i] || '';
+          td.classList.toggle('sec', !!prim && !prim.includes(i) && !td.classList.contains('actions-cell'));
+          td.classList.toggle('wide', i === 0 && tabId !== 'tab-invitados');
+        });
+        if (prim && !tr.querySelector('.more-td') && !tr.querySelector('.empty')) tr.insertAdjacentHTML('beforeend', '<td class="more-td"><button type="button" class="more-btn" data-more>Más datos ▾</button></td>');
+      });
+    });
+  }
   // Al volver a dibujar una pestaña se conserva la posición de la página y de las tablas.
   function keepScroll(fn) {
     return (...args) => {
@@ -895,6 +936,7 @@
       const out = fn(...args);
       document.querySelectorAll('.tab:not([hidden]) .table-wrap, .tab:not([hidden]) .assoc-list').forEach((w, i) => { if (wraps[i]) { w.scrollTop = wraps[i][0]; w.scrollLeft = wraps[i][1]; } });
       window.scrollTo(0, y);
+      labelTables();
       return out;
     };
   }
@@ -955,6 +997,8 @@
   /* ---------- eventos delegados ---------- */
   const handlers = { invitados: invitadosClick, mesas: mesasEvent, presupuesto: presupuestoEvent, proveedores: proveedoresEvent, tareas: tareasEvent };
   document.addEventListener('click', e => {
+    const mb = e.target.closest('[data-more]');
+    if (mb) { const tr = mb.closest('tr'); tr.classList.toggle('open'); mb.textContent = tr.classList.contains('open') ? 'Menos datos ▴' : 'Más datos ▾'; return; }
     const el = e.target.closest('[data-act]'); if (!el) return;
     const tab = el.closest('.tab'); const name = tab?.id.replace('tab-', ''); if (!handlers[name]) return;
     if (name === 'invitados') invitadosClick(el.dataset.act, el); else handlers[name](el.dataset.act, el, 'click');

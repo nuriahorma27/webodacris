@@ -217,6 +217,78 @@
       .alert strong{display:block;margin-bottom:4px;font:600 14px "DM Sans",sans-serif}.alert ul{margin:0;padding-left:18px;font-size:13.5px}.alert li.venc b{color:#9a2f1f}
       tr.vence-mes td{background:#fbefcf!important}tr.vence-ya td{background:#f7ddd6!important}
       input.chk-big{width:20px;height:20px;min-width:0}
+      /* ===== Móvil y tablet ===== */
+      .fbtn,.moretoggle,.mobonly,.more-td{display:none}
+      .actions-more{display:contents}
+      .hide-m{display:inline}
+      @media(max-width:1100px){
+        .fbtn{display:inline-flex}
+        .filters{display:none}.filters.open{display:grid}
+        .fchips{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+        .fchip{flex:0 0 auto}
+      }
+      @media(max-width:900px){
+        .panel{padding:18px 14px 110px}
+        .panel-head{margin-bottom:14px}.panel-head h1{font-size:30px}
+        .panel-head .actions{width:100%;justify-content:space-between}
+        .tabs{flex-wrap:nowrap;overflow-x:auto;gap:2px;margin:0 -14px 14px;padding:0 14px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+        .tabs::-webkit-scrollbar{display:none}
+        .tabs button{flex:0 0 auto;padding:9px 12px;font-size:17px;white-space:nowrap}
+        .stats{grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+        .stat{padding:8px 10px}.stat strong{font-size:22px}.stat span{font-size:11px;line-height:1.25}
+        .toolbar{gap:8px}.toolbar .grow{display:none}
+        .toolbar .primary,.toolbar .secondary,label.filebtn{height:40px}
+        /* barra inferior de Invitados: buscador y filtros al alcance del pulgar */
+        .tb-main{position:fixed;left:0;right:0;bottom:0;z-index:35;margin:0;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:rgba(247,240,226,.97);border-top:1px solid var(--line);box-shadow:0 -6px 18px rgba(76,67,48,.12);flex-wrap:nowrap;align-items:center}
+        .tb-main #g-q{flex:1 1 auto;min-width:0;width:auto;height:42px}
+        .tb-main .count,.tb-main .grow{display:none}
+        .tb-main>.link{position:absolute;right:14px;bottom:calc(100% + 6px);padding:4px 12px;border-radius:14px;background:#fffdf7;border:1px solid var(--line);text-decoration:none;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+        .hide-m{display:none}
+        .tb-main .primary{width:44px;padding:0;font-size:22px}
+        .moretoggle{display:inline-flex;width:44px;padding:0;font-size:20px}
+        .actions-more{display:none}
+        .actions-more.open{display:grid;grid-template-columns:1fr 1fr;gap:8px;position:fixed;left:10px;right:10px;bottom:calc(72px + env(safe-area-inset-bottom));z-index:40;padding:12px;background:#faf5e9;border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 30px rgba(52,67,52,.28)}
+        .actions-more.open .secondary,.actions-more.open label.filebtn{width:100%}
+        .filters,.filters.open{grid-template-columns:minmax(0,1fr)}.frow,.fchips{min-width:0}
+        .panel-head .secondary{padding:5px 12px;font-size:15px}
+        .filters.open{position:fixed;left:10px;right:10px;bottom:calc(72px + env(safe-area-inset-bottom));z-index:40;max-height:64vh;overflow-y:auto;box-shadow:0 10px 30px rgba(52,67,52,.28);padding:14px}
+        .mobonly{display:inline-flex;justify-content:center;align-items:center;height:42px;border-radius:21px;margin-top:4px;position:sticky;bottom:0}
+        .frow{flex-direction:column;gap:3px}.flabel{flex:none}
+        .assoc-list{max-height:none}
+        /* tablas -> tarjetas */
+        .table-wrap,.table-wrap.tall{overflow:visible;max-height:none;border:0;background:transparent}
+        table.edit,table.edit tbody{display:block;width:100%}
+        table.edit thead{display:none}
+        table.edit tr{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;position:relative;margin:0 0 12px;padding:12px 14px;background:#fffdf7;border:1px solid var(--line);border-radius:14px;box-shadow:0 1px 6px rgba(76,67,48,.05)}
+        table.edit tr:hover{background:#fffdf7}
+        table.edit td{display:block;min-width:0;padding:0!important;border:0;background:transparent!important}
+        table.edit td::before{content:attr(data-label);display:block;margin:0 0 2px 4px;font:500 11px "DM Sans",sans-serif;opacity:.6;text-transform:none}
+        table.edit td.empty::before,table.edit td.more-td::before,table.edit td.actions-cell::before{content:none}
+        table.edit td.sec{display:none}table.edit tr.open td.sec{display:block}
+        table.edit td.wide{grid-column:1/-1}
+        table.edit td.actions-cell{position:absolute;top:6px;right:8px;left:auto;width:auto;grid-column:auto;z-index:2}
+        table.edit tr>td:first-child,table.edit tr>td:nth-child(2){padding-top:2px!important}
+        table.edit td.more-td{display:block;grid-column:1/-1}
+        table.edit input:not([type=checkbox]),table.edit select,table.edit .grow{width:100%;min-width:0!important;max-width:none}
+        table.edit input,table.edit select{height:40px;font-size:15px}
+        table.edit input,table.edit .grow textarea.cell-text{border-color:var(--line);background:#fffdf7}
+        table.edit .c-nombre,table.edit .c-apellido{font-weight:600}
+        table.edit td.center{text-align:left;min-width:0}
+        .more-btn{width:100%;height:36px;border:1px dashed var(--line);border-radius:18px;background:transparent;color:var(--green);font:500 13px "DM Sans",sans-serif}
+        .menu{flex-wrap:wrap;white-space:normal}
+        input.chk-big{width:26px;height:26px}
+        .cat-head{gap:6px}.cat-head h3{font-size:22px}
+        .cards{grid-template-columns:1fr!important}
+        .mcard{padding:14px}
+        .task-head{gap:6px}.task-title{flex:1 1 100%;order:-1;min-width:0}
+        .task select{flex:1 1 40%}
+        .detail .grid2{grid-template-columns:1fr}
+        .alert{flex-direction:column;gap:8px}
+        dialog.form{width:calc(100% - 16px);padding:16px}
+        .assoc-row{grid-template-columns:38px 1fr}.assoc-row .st{grid-column:1/-1;justify-content:flex-start}
+      }
+      @media(min-width:640px) and (max-width:900px){table.edit tr{grid-template-columns:repeat(3,1fr)}table.edit td.wide{grid-column:1/-1}}
+      @media(max-width:900px){.cat-head [data-act=p-ren]{margin-left:auto}.cat-head .grow{display:none}}
       @media print{.mopts,.mfill,.x2,.seatbtn,.seg,.stepper{display:none!important}.mseats li{border:0;background:none;padding:2px 0}.mseats .sn{display:none}}
       @media print{.seat-print{display:block!important;visibility:visible}.alerg{display:none!important}.seats li{break-inside:avoid}}
       @media print{body *{visibility:hidden}#tab-mesas,#tab-mesas *{visibility:visible}#tab-mesas{position:absolute;left:0;top:0;width:100%}.toolbar,.assoc,.seats select{display:none!important}}
@@ -300,7 +372,7 @@
       </dialog>
     </main>
 
-    <script src="/gestion-data.js?v=24"></script>
-    <script src="/admin.js?v=24"></script>
+    <script src="/gestion-data.js?v=28"></script>
+    <script src="/admin.js?v=28"></script>
   </body>
 </html>
