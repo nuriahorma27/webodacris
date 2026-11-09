@@ -37,7 +37,7 @@
     invitados: () => ({ invitados: [], columnas: ['Dirección', 'Alergias', 'Invitación entregada', 'Regalo', 'Cantidad (regalo)', 'Agradecimiento enviado'].map(n => ({ id: uid(), nombre: n, tipo: /entregada|^Regalo|enviado/.test(n) ? 'sino' : n.startsWith('Cantidad') ? 'numero' : 'texto' })), grupos: ['Familia de la novia', 'Familia del novio', 'Amigos de la novia', 'Amigos del novio', 'Amigos comunes', 'Trabajo', 'Otros'], vinculos: {} }),
     mesas: () => ({ mesas: [] }),
     presupuesto: () => ({ partidas: initialPartidas() }),
-    proveedores: () => ({ manuales: [] }),
+    proveedores: () => ({ manuales: [], autoPagos: {} }),
     tareas: () => ({ estados: {}, detalles: {}, custom: { ov: {}, borradas: [], nuevas: [], catsBorradas: [] }, resp: [] })
   };
   const CATS_INICIALES = ['Iglesia', 'Banquete', 'Música', 'Decoración y flores', 'Fotografía y vídeo', 'La novia', 'El novio', 'Papelería', 'Transporte', 'Detalles y regalos', 'Viaje de novios', 'Otros'];
@@ -86,6 +86,7 @@
       clearTimeout(h.settle); h.settle = setTimeout(() => { h.snap = JSON.stringify(SEC[name].data); h.pending = false; updateUndoButtons(); }, 1000);
       updateUndoButtons();
     }
+    if (name === 'proveedores' || name === 'tareas') renderAlerts();
     setSave('Guardando…'); clearTimeout(s.timer); s.timer = setTimeout(() => flush(name), 700);
   }
   const TAB_SECTION = { invitados: 'invitados', mesas: 'mesas', presupuesto: 'presupuesto', proveedores: 'proveedores', tareas: 'tareas' };
@@ -840,23 +841,52 @@
       return [{ id: 'tarea-' + t.id, nombre: o.nombre || t.titulo, categoria: t.categoria, email: o.email, telefono: o.telefono, estado: 'Contratado', importe: Number(o.presupuesto) || 0, incluye: o.notas, desde: t.titulo }];
     });
   }
+  const ISO = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const fechaCorta = iso => { const [y, m, d] = iso.split('-'); return `${d}/${m}/${y}`; };
+  // Pagos que toca hacer este mes o que ya se han pasado (sin pagar).
+  function pagosPendientes() {
+    if (!SEC.proveedores || !SEC.tareas) return [];
+    const hoy = ISO(new Date()), mes = hoy.slice(0, 7), pagos = SEC.proveedores.data.autoPagos || {};
+    const todos = [...autoProveedores().map(p => ({ ...p, ...(pagos[p.id] || {}) })), ...SEC.proveedores.data.manuales];
+    return todos.filter(p => p.fechaPago && !p.pagado && p.estado !== 'Descartado' && p.fechaPago.slice(0, 7) <= mes)
+      .map(p => ({ nombre: p.nombre || p.categoria || '(sin nombre)', fecha: p.fechaPago, importe: Number(p.importe) || 0, vencido: p.fechaPago < hoy }))
+      .sort((x, y) => x.fecha.localeCompare(y.fecha));
+  }
+  function renderAlerts() {
+    const box = $('#alerts'); if (!box) return;
+    const list = pagosPendientes();
+    box.innerHTML = list.length ? `<div class="alert ${list.some(p => p.vencido) ? 'bad' : 'warn'}" role="alert"><div><strong>⚠ ${list.some(p => p.vencido) ? 'Hay pagos a proveedores vencidos o de este mes' : 'Este mes toca pagar a proveedores'}</strong>
+      <ul>${list.map(p => `<li class="${p.vencido ? 'venc' : ''}"><b>${esc(p.nombre)}</b> · ${fechaCorta(p.fecha)}${p.importe ? ` · ${eur(p.importe)}` : ''}${p.vencido ? ' · <em>vencido</em>' : ''}</li>`).join('')}</ul></div>
+      ${current === 'proveedores' ? '' : '<button class="mini solid" data-go="proveedores">Ver proveedores</button>'}</div>` : '';
+  }
   function renderProveedores() {
-    const manuales = SEC.proveedores.data.manuales, auto = autoProveedores(), all = [...auto, ...manuales];
-    const contr = all.filter(p => p.estado === 'Contratado');
-    $('#tab-proveedores').innerHTML = `<div class="stats"><div class="stat"><strong>${all.length}</strong><span>proveedores</span></div><div class="stat"><strong>${contr.length}</strong><span>contratados</span></div><div class="stat"><strong id="pv-total">${eur(contr.reduce((s, p) => s + (Number(p.importe) || 0), 0))}</strong><span>importe contratado</span></div></div>
-      <div class="toolbar"><button class="primary" data-act="v-add">＋ Proveedor</button><span class="grow"></span><span class="muted">Los marcados «Contratado» en Tareas aparecen aquí solos.</span></div>
-      <div class="table-wrap"><table class="edit"><thead><tr><th>Nombre</th><th>Categoría</th><th>Email</th><th>Teléfono</th><th>Estado</th><th>Importe</th><th>Qué incluye / notas</th><th></th></tr></thead><tbody>
-      ${auto.map(p => `<tr class="auto"><td>${esc(p.nombre)}</td><td>${esc(p.categoria)}</td><td>${esc(p.email)}</td><td>${esc(p.telefono)}</td><td><span class="pill ok">Contratado</span></td><td>${eur(p.importe)}</td><td>${esc(p.incluye)} <span class="muted">(desde la tarea «${esc(p.desde)}»)</span></td><td></td></tr>`).join('')}
-      ${manuales.map(p => `<tr data-id="${p.id}"><td><input data-vf="nombre" value="${esc(p.nombre)}" /></td><td><input data-vf="categoria" value="${esc(p.categoria)}" /></td><td><input data-vf="email" type="email" value="${esc(p.email)}" /></td><td><input data-vf="telefono" type="tel" value="${esc(p.telefono)}" /></td><td><select data-vf="estado">${opts(ESTADOS_PROV, p.estado)}</select></td><td><input data-vf="importe" data-num type="number" step="any" value="${p.importe || ''}" class="w100" /></td><td><input data-vf="incluye" value="${esc(p.incluye)}" /></td><td class="actions-cell"><button class="delete" data-act="v-del" aria-label="Eliminar">${TRASH}</button></td></tr>`).join('')}
-      ${all.length ? '' : '<tr><td class="empty" colspan="8">Aún no hay proveedores.</td></tr>'}</tbody></table></div>`;
+    const manuales = SEC.proveedores.data.manuales, pagos = SEC.proveedores.data.autoPagos = SEC.proveedores.data.autoPagos || {};
+    const auto = autoProveedores().map(p => ({ ...p, ...(pagos[p.id] || {}) })), all = [...auto, ...manuales];
+    const contr = all.filter(p => p.estado === 'Contratado'), hoy = ISO(new Date()), mes = hoy.slice(0, 7);
+    const cls = p => (p.fechaPago && !p.pagado && p.estado !== 'Descartado' ? (p.fechaPago < hoy ? ' vence-ya' : p.fechaPago.slice(0, 7) === mes ? ' vence-mes' : '') : '');
+    const pagado = contr.filter(p => p.pagado).reduce((s, p) => s + (Number(p.importe) || 0), 0);
+    $('#tab-proveedores').innerHTML = `<div class="stats"><div class="stat"><strong>${all.length}</strong><span>proveedores</span></div><div class="stat"><strong>${contr.length}</strong><span>contratados</span></div><div class="stat"><strong>${eur(contr.reduce((s, p) => s + (Number(p.importe) || 0), 0))}</strong><span>importe contratado</span></div><div class="stat"><strong>${eur(pagado)}</strong><span>ya pagado</span></div></div>
+      <div class="toolbar"><button class="primary" data-act="v-add">＋ Proveedor</button><span class="grow"></span><span class="muted">Pon la fecha de pago y avisará arriba cuando llegue ese mes. Los «Contratado» en Tareas aparecen aquí solos.</span></div>
+      <div class="table-wrap"><table class="edit"><thead><tr><th>Nombre</th><th>Categoría</th><th>Email</th><th>Teléfono</th><th>Estado</th><th>Importe</th><th>Fecha de pago</th><th>Pagado</th><th>Qué incluye / notas</th><th></th></tr></thead><tbody>
+      ${auto.map(p => `<tr class="auto${cls(p)}" data-auto="${esc(p.id)}"><td>${esc(p.nombre)}</td><td>${esc(p.categoria)}</td><td>${esc(p.email)}</td><td>${esc(p.telefono)}</td><td><span class="pill ok">Contratado</span></td><td>${eur(p.importe)}</td><td><input data-av="fechaPago" type="date" value="${esc(p.fechaPago || '')}" /></td><td class="center"><input data-av="pagado" type="checkbox" class="chk-big"${p.pagado ? ' checked' : ''} /></td><td>${esc(p.incluye)} <span class="muted">(desde la tarea «${esc(p.desde)}»)</span></td><td></td></tr>`).join('')}
+      ${manuales.map(p => `<tr data-id="${p.id}" class="${cls(p).trim()}"><td><input data-vf="nombre" value="${esc(p.nombre)}" /></td><td><input data-vf="categoria" value="${esc(p.categoria)}" /></td><td><input data-vf="email" type="email" value="${esc(p.email)}" /></td><td><input data-vf="telefono" type="tel" value="${esc(p.telefono)}" /></td><td><select data-vf="estado">${opts(ESTADOS_PROV, p.estado)}</select></td><td><input data-vf="importe" data-num type="number" step="any" value="${p.importe || ''}" class="w100" /></td><td><input data-vf="fechaPago" type="date" value="${esc(p.fechaPago || '')}" /></td><td class="center"><input data-vf="pagado" type="checkbox" class="chk-big"${p.pagado ? ' checked' : ''} /></td><td><input data-vf="incluye" value="${esc(p.incluye)}" /></td><td class="actions-cell"><button class="delete" data-act="v-del" aria-label="Eliminar">${TRASH}</button></td></tr>`).join('')}
+      ${all.length ? '' : '<tr><td class="empty" colspan="10">Aún no hay proveedores.</td></tr>'}</tbody></table></div>`;
+    renderAlerts();
   }
   async function proveedoresEvent(act, el, ev) {
-    const data = SEC.proveedores.data, row = el.closest('tr[data-id]'), p = row && data.manuales.find(p => p.id === row.dataset.id);
-    if (act === 'v-add') { data.manuales.push({ id: uid(), nombre: '', categoria: '', email: '', telefono: '', estado: 'En contacto', importe: 0, incluye: '' }); markDirty('proveedores'); renderProveedores(); }
+    const data = SEC.proveedores.data, row = el.closest('tr[data-id]'), p = row && data.manuales.find(p => p.id === row.dataset.id), autoRow = el.closest('tr[data-auto]');
+    if (act === 'v-add') { data.manuales.push({ id: uid(), nombre: '', categoria: '', email: '', telefono: '', estado: 'En contacto', importe: 0, incluye: '', fechaPago: '', pagado: false }); markDirty('proveedores'); renderProveedores(); }
     else if (act === 'v-del') { if (await ask(`Se eliminará a ${p.nombre || 'este proveedor'}.`)) { data.manuales = data.manuales.filter(x => x.id !== p.id); markDirty('proveedores'); renderProveedores(); } }
-    else if (el.dataset.vf && p) { p[el.dataset.vf] = el.dataset.num !== undefined ? Number(el.value) || 0 : el.value; markDirty('proveedores'); if (ev === 'change' && el.tagName === 'SELECT') renderProveedores(); }
+    else if (el.dataset.av && autoRow) {
+      const pg = (data.autoPagos = data.autoPagos || {}), id = autoRow.dataset.auto; pg[id] = pg[id] || {};
+      pg[id][el.dataset.av] = el.type === 'checkbox' ? el.checked : el.value; markDirty('proveedores');
+      if (ev === 'change') renderProveedores();
+    }
+    else if (el.dataset.vf && p) {
+      p[el.dataset.vf] = el.type === 'checkbox' ? el.checked : el.dataset.num !== undefined ? Number(el.value) || 0 : el.value; markDirty('proveedores');
+      if (ev === 'change' && (el.tagName === 'SELECT' || el.type === 'checkbox' || el.type === 'date')) renderProveedores();
+    }
   }
-
 
   // Al volver a dibujar una pestaña se conserva la posición de la página y de las tablas.
   function keepScroll(fn) {
@@ -888,6 +918,7 @@
     $('#actions-resp').hidden = current !== 'respuestas';
     updateUndoButtons();
     loginView.hidden = true; panelView.hidden = false;
+    renderAlerts();
     try {
       const faltan = tab.need.filter(n => !SEC[n]);
       if (faltan.length || (current === 'respuestas' && !respData)) {
@@ -908,7 +939,7 @@
       if (current === mine) tabEl.innerHTML = `<p class="error">${esc(e.message || 'Error')}</p><p class="center"><button class="secondary" id="retry-load" type="button" style="width:auto">Reintentar</button></p>`;
     }
   }
-  document.addEventListener('click', e => { if (e.target.id === 'retry-load') render(); });
+  document.addEventListener('click', e => { if (e.target.id === 'retry-load') render(); const go = e.target.closest('[data-go]'); if (go) { current = go.dataset.go; history.replaceState(null, '', '#' + current); render(); } });
   document.querySelector('.tabs').addEventListener('click', e => { const b = e.target.closest('button[data-tab]'); if (!b) return; current = b.dataset.tab; history.replaceState(null, '', '#' + current); render(); });
 
   let scrollTimer; window.addEventListener('scroll', () => { clearTimeout(scrollTimer); scrollTimer = setTimeout(() => ssSet('scroll-' + current, window.scrollY), 200); }, { passive: true });
