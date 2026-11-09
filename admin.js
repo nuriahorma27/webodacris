@@ -129,6 +129,26 @@
   const FIXED = { si: '#d6e8bd', no: '#f2d0c7', pendiente: '#f7e3c3', 'tal vez': '#f7e3c3', adulto: '#ebe5d3', nino: '#cfdcf2' };
   const hashIdx = v => { let h = 5381; for (const ch of norm(v)) h = ((h << 5) + h + ch.charCodeAt(0)) | 0; return Math.abs(h) % PALETTE.length; };
   const tint = (v, i) => { const k = norm(v); if (!k) return ''; return ` style="background:${FIXED[k] || PALETTE[i !== undefined && i >= 0 ? i % PALETTE.length : hashIdx(v)]}"`; };
+  const isFiltering = () => !!(guestFilter.q || guestFilter.grupo || guestFilter.subgrupo || guestFilter.viene || guestFilter.tipo);
+  function filteredGuests() {
+    const q = norm(guestFilter.q);
+    return SEC.invitados.data.invitados.filter(g => (!q || norm(`${fullName(g)} ${g.grupo} ${g.subgrupo}`).includes(q)) && (!guestFilter.grupo || g.grupo === guestFilter.grupo) && (!guestFilter.subgrupo || g.subgrupo === guestFilter.subgrupo) && (!guestFilter.viene || g.viene === guestFilter.viene) && (!guestFilter.tipo || g.tipo === guestFilter.tipo));
+  }
+  function guestStatsArr(shown) {
+    const total = SEC.invitados.data.invitados.length, n = f => shown.filter(f).length;
+    return [[shown.length, isFiltering() ? `de ${total} · coinciden con el filtro` : 'personas'], [n(g => g.viene === 'Sí'), 'confirmadas'], [n(g => g.viene === 'Pendiente'), 'pendientes'], [n(g => g.viene === 'No'), 'no vienen'], [n(g => g.tipo === 'Adulto' && g.viene !== 'No'), 'adultos'], [n(g => g.tipo === 'Niño' && g.viene !== 'No'), 'niños']];
+  }
+  // Actualiza números y colores sin volver a dibujar la tabla (así no se pierde el sitio).
+  function refreshGuestStats() {
+    const box = $('#tab-invitados .stats'); if (!box) return;
+    box.innerHTML = guestStatsArr(filteredGuests()).map(([x, l]) => `<div class="stat"><strong>${x}</strong><span>${l}</span></div>`).join('');
+    const c = $('#tab-invitados .count'); if (c) c.textContent = `${filteredGuests().length} de ${SEC.invitados.data.invitados.length}`;
+  }
+  function retint(el) {
+    const v = el.value, inv = SEC.invitados.data;
+    const color = !v ? '' : el.dataset.gf === 'grupo' ? (FIXED[norm(v)] || PALETTE[Math.max(0, inv.grupos.indexOf(v)) % PALETTE.length]) : (FIXED[norm(v)] || PALETTE[hashIdx(v)]);
+    el.style.background = color; if (!color) el.removeAttribute('style');
+  }
   const guestFilter = { q: '', grupo: '', subgrupo: '', viene: '', tipo: '' };
   const fullName = g => `${g?.nombre || ''} ${g?.apellido || ''}`.trim();
 
@@ -157,11 +177,7 @@
   function renderInvitados() {
     const inv = SEC.invitados.data, list = inv.invitados;
     const vinculado = new Set(Object.values(inv.vinculos));
-    const q = norm(guestFilter.q);
-    const shown = list.filter(g => (!q || norm(`${fullName(g)} ${g.grupo} ${g.subgrupo}`).includes(q)) && (!guestFilter.grupo || g.grupo === guestFilter.grupo) && (!guestFilter.subgrupo || g.subgrupo === guestFilter.subgrupo) && (!guestFilter.viene || g.viene === guestFilter.viene) && (!guestFilter.tipo || g.tipo === guestFilter.tipo));
-    const filtering = shown.length !== list.length || q || guestFilter.grupo || guestFilter.subgrupo || guestFilter.viene || guestFilter.tipo;
-    const n = f => shown.filter(f).length;
-    const stats = [[shown.length, filtering ? `de ${list.length} · coinciden con el filtro` : 'personas'], [n(g => g.viene === 'Sí'), 'confirmadas'], [n(g => g.viene === 'Pendiente'), 'pendientes'], [n(g => g.viene === 'No'), 'no vienen'], [n(g => g.tipo === 'Adulto' && g.viene !== 'No'), 'adultos'], [n(g => g.tipo === 'Niño' && g.viene !== 'No'), 'niños']];
+    const shown = filteredGuests(), filtering = isFiltering(), stats = guestStatsArr(shown);
     const subgrupos = [...new Set(list.map(g => g.subgrupo).filter(Boolean))].sort((x, y) => x.localeCompare(y, 'es'));
     const cell = (g, c) => {
       const v = g.extra[c.id] ?? '';
@@ -243,8 +259,9 @@
   }
   const yesNo = v => { const x = norm(v); return x === 'si' ? 'Sí' : x === 'no' ? 'No' : String(v).trim(); };
   // Columnas conocidas del Excel de invitados -> columna de la ficha (tipo).
-  const IMPORT_COLS = { 'direccion': ['Dirección', 'texto'], 'alergias': ['Alergias', 'texto'], 'invitacion': ['Invitación entregada', 'sino'], 'regalo': ['Regalo', 'sino'], 'cantidad (regalo)': ['Cantidad (regalo)', 'numero'], 'agradecimientos': ['Agradecimiento enviado', 'sino'], 'agradecimiento': ['Agradecimiento enviado', 'sino'], 'bus ida': ['Bus ida', 'texto'], 'bus vuelta': ['Bus vuelta', 'texto'], 'hora vuelta': ['Hora bus vuelta', 'texto'], 'hora ida': ['Hora bus ida', 'texto'], 'alojamiento': ['Alojamiento', 'texto'], 'menu': ['Menú', 'texto'], 'notas': ['Notas', 'texto'] };
+  const IMPORT_COLS = { 'direccion': ['Notas', 'texto'], 'observaciones': ['Notas', 'texto'], 'alergias': ['Alergias', 'texto'], 'invitacion': ['Invitación entregada', 'sino'], 'regalo': ['Regalo', 'sino'], 'cantidad (regalo)': ['Cantidad (regalo)', 'numero'], 'agradecimientos': ['Agradecimiento enviado', 'sino'], 'agradecimiento': ['Agradecimiento enviado', 'sino'], 'bus ida': ['Bus ida', 'texto'], 'bus vuelta': ['Bus vuelta', 'texto'], 'hora vuelta': ['Hora bus vuelta', 'texto'], 'hora ida': ['Hora bus ida', 'texto'], 'alojamiento': ['Alojamiento', 'texto'], 'menu': ['Menú', 'texto'], 'notas': ['Notas', 'texto'] };
   const IGNORE_COLS = new Set(['mesas', 'mesa', '']);
+  const setNote = (g, inv, text) => { const id = ensureCol(inv, 'Notas', 'texto'); g.extra[id] = g.extra[id] ? `${g.extra[id]} · ${text}` : text; };
   async function importExcel(file) {
     const X = await getXLSX();
     const wb = X.read(await file.arrayBuffer(), { type: 'array' });
@@ -260,6 +277,7 @@
     const inv = SEC.invitados.data;
     if (inv.invitados.length && await ask(`Ya hay ${inv.invitados.length} invitados en la lista. ¿Quieres sustituirlos por los del Excel? (Si no, se cancela la importación y no cambia nada.)`, 'Sustituir')) { inv.invitados = []; inv.vinculos = {}; }
     else if (inv.invitados.length) return;
+    if (!inv.invitados.length) inv.grupos = [];   // los grupos de la lista sustituyen a los de ejemplo
     const K = g => `${norm(g.nombre)}|${norm(g.apellido)}|${norm(g.grupo)}|${norm(g.subgrupo)}`;
     const seen = new Set(inv.invitados.map(K));
     const extras = head.map((h, i) => (i === nameCol || i === iN || i === iA || i === iViene || i === iGrupo || i === iSub || i === iTipo || IGNORE_COLS.has(h) ? null : (IMPORT_COLS[h] || [String(all[hi][i]).trim(), 'texto'])));
@@ -273,8 +291,8 @@
       const g = newGuest(nombre, apellido);
       g.grupo = grupo; g.subgrupo = iSub >= 0 ? String(r[iSub]).trim() : '';
       if (iTipo >= 0 && /^ni/.test(norm(r[iTipo]))) g.tipo = 'Niño';
-      if (iViene >= 0) { const v = norm(r[iViene]); g.viene = v === 'si' ? 'Sí' : v === 'no' ? 'No' : 'Pendiente'; if (v && !['si', 'no'].includes(v)) g.extra[ensureCol(inv, 'Notas', 'texto')] = String(r[iViene]).trim(); }
-      extras.forEach((c, i) => { const val = String(r[i] ?? '').trim(); if (!c || !val || norm(val) === 'no viene' && c[0] !== 'Dirección' && c[0] !== 'Notas') return; if (norm(val) === 'no viene') return; g.extra[ensureCol(inv, c[0], c[1])] = c[1] === 'sino' ? yesNo(val) : c[1] === 'numero' ? (Number(val) ? String(Number(val)) : '') : val; });
+      if (iViene >= 0) { const v = norm(r[iViene]); g.viene = v === 'si' ? 'Sí' : v === 'no' ? 'No' : 'Pendiente'; if (v && !['si', 'no', 'pendiente'].includes(v)) setNote(g, inv, String(r[iViene]).trim()); }
+      extras.forEach((c, i) => { const val = String(r[i] ?? '').trim(); if (!c || !val || norm(val) === 'no viene' && c[0] !== 'Dirección' && c[0] !== 'Notas') return; if (norm(val) === 'no viene') return; if (c[0] === 'Notas') return setNote(g, inv, val); g.extra[ensureCol(inv, c[0], c[1])] = c[1] === 'sino' ? yesNo(val) : c[1] === 'numero' ? (Number(val) ? String(Number(val)) : '') : val; });
       if (seen.has(K(g))) { skipped++; continue; }   // ya estaba antes de importar (así se puede repetir la importación sin duplicar)
       inv.invitados.push(g); added++;
       if (g.grupo && !inv.grupos.includes(g.grupo)) inv.grupos.push(g.grupo);
@@ -341,8 +359,8 @@
     const g = inv.invitados.find(g => g.id === tr.dataset.id); if (!g) return;
     if (el.dataset.gf) g[el.dataset.gf] = el.value; else if (el.dataset.gx) g.extra[el.dataset.gx] = el.value; else return;
     markDirty('invitados');
-    if (el.dataset.gf === 'subgrupo') el.style.background = el.value ? PALETTE[hashIdx(el.value)] : '';
-    if (isChange && el.tagName === 'SELECT') renderInvitados();
+    if (el.dataset.gf === 'subgrupo' || el.tagName === 'SELECT') retint(el);
+    refreshGuestStats();
   }
 
   /* ================= MESAS ================= */
@@ -436,7 +454,8 @@
   }
 
   /* ================= TAREAS ================= */
-  const tView = { vista: 'fase', resp: '', estado: '', abierta: null };
+  const tView = { vista: 'fase', resp: '', estado: '', abierta: null, open: {} };
+  document.addEventListener('toggle', e => { const d = e.target; if (d.matches?.('details.group')) tView.open[d.dataset.group] = d.open; }, true);
   const ESTADOS = [['sin', 'Sin empezar'], ['proceso', 'En proceso'], ['hecho', 'Terminado']];
   function effectiveTareas() {
     const c = SEC.tareas.data.custom;
@@ -457,7 +476,7 @@
       ${groups.map(gr => {
         const ts = shown.filter(t => key(t) === gr); const all2 = all.filter(t => key(t) === gr);
         if (!ts.length && (tView.resp || tView.estado)) return '';
-        return `<details class="group" data-group="${esc(gr)}" ${ts.length && ts.some(t => est(t.id) !== 'hecho') ? 'open' : ''}><summary>${esc(gr)} <span class="muted">${all2.filter(t => est(t.id) === 'hecho').length}/${all2.length}</span></summary>
+        return `<details class="group" data-group="${esc(gr)}" ${(tView.open[gr] ?? (ts.length && ts.some(t => est(t.id) !== 'hecho'))) ? 'open' : ''}><summary>${esc(gr)} <span class="muted">${all2.filter(t => est(t.id) === 'hecho').length}/${all2.length}</span></summary>
           ${ts.map(t => taskRow(t, est(t.id))).join('')}<button class="link" data-act="t-add" data-gr="${esc(gr)}">＋ Añadir tarea</button></details>`;
       }).join('')}`;
   }
@@ -544,6 +563,19 @@
     else if (act === 'v-del') { if (await ask(`Se eliminará a ${p.nombre || 'este proveedor'}.`)) { data.manuales = data.manuales.filter(x => x.id !== p.id); markDirty('proveedores'); renderProveedores(); } }
     else if (el.dataset.vf && p) { p[el.dataset.vf] = el.dataset.num !== undefined ? Number(el.value) || 0 : el.value; markDirty('proveedores'); if (ev === 'change' && el.tagName === 'SELECT') renderProveedores(); }
   }
+
+
+  // Al volver a dibujar una pestaña se conserva la posición de la página y de las tablas.
+  function keepScroll(fn) {
+    return (...args) => {
+      const y = window.scrollY, wraps = [...document.querySelectorAll('.tab:not([hidden]) .table-wrap, .tab:not([hidden]) .assoc-list')].map(w => [w.scrollTop, w.scrollLeft]);
+      const out = fn(...args);
+      document.querySelectorAll('.tab:not([hidden]) .table-wrap, .tab:not([hidden]) .assoc-list').forEach((w, i) => { if (wraps[i]) { w.scrollTop = wraps[i][0]; w.scrollLeft = wraps[i][1]; } });
+      window.scrollTo(0, y);
+      return out;
+    };
+  }
+  renderInvitados = keepScroll(renderInvitados); renderAssoc = keepScroll(renderAssoc); renderMesas = keepScroll(renderMesas); renderPresupuesto = keepScroll(renderPresupuesto); renderTareas = keepScroll(renderTareas); renderProveedores = keepScroll(renderProveedores);
 
   /* ---------- pestañas ---------- */
   const TABS = {
