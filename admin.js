@@ -318,14 +318,9 @@
       </div>
       <div class="filters" id="gfilters">${filtersHtml()}</div>
       <details class="assoc" id="assoc-box"${ssGet('assoc') === '1' ? ' open' : ''}><summary>Respuestas del cuestionario ${respData ? `· ${pend} sin asociar de ${respData.rows.length}` : ''}</summary><div id="assoc"></div></details>
-      <datalist id="dl-sub">${[...new Set(list.map(g => g.subgrupo).filter(Boolean))].sort().map(x => `<option value="${esc(x)}">`).join('')}</datalist><div class="table-wrap tall"><table class="edit"><thead><tr><th>Nombre</th><th>Apellido</th><th>Mesa</th><th>¿Viene?</th><th>Grupo</th><th>Subgrupo</th><th>Tipo</th>${inv.columnas.map(c => `<th>${esc(c.nombre)} <button class="x" data-act="g-delcol" data-id="${c.id}" title="Quitar columna">×</button></th>`).join('')}<th>Cuestionario</th><th></th></tr></thead>
+      <datalist id="dl-sub">${[...new Set(list.map(g => g.subgrupo).filter(Boolean))].sort().map(x => `<option value="${esc(x)}">`).join('')}</datalist><div class="table-wrap tall"><table class="edit"><thead><tr><th>Nombre</th><th>Apellido</th><th>Cuestionario</th><th>Mesa</th><th>¿Viene?</th><th>Grupo</th><th>Subgrupo</th><th>Tipo</th>${inv.columnas.map(c => `<th>${esc(c.nombre)} <button class="x" data-act="g-delcol" data-id="${c.id}" title="Quitar columna">×</button></th>`).join('')}<th></th></tr></thead>
       <tbody>${shown.length ? shown.map(g => `<tr data-id="${g.id}">
         <td><input data-gf="nombre" class="c-nombre" value="${esc(g.nombre)}" /></td><td><input data-gf="apellido" class="c-apellido" value="${esc(g.apellido)}" /></td>
-        <td><select data-gmesa${tint(mm.has(g.id) ? mm.get(g.id).numero : '', mm.has(g.id) ? mm.get(g.id).numero - 1 : -1)}>${mesaOpts(mm.get(g.id))}</select></td>
-        <td><select data-gf="viene"${tint(g.viene)}>${opts(VIENE, g.viene)}</select></td>
-        <td><select data-gf="grupo"${tint(g.grupo, inv.grupos.indexOf(g.grupo))}>${opts(inv.grupos, g.grupo, '—')}</select></td><td><input data-gf="subgrupo" list="dl-sub" value="${esc(g.subgrupo)}"${tint(g.subgrupo)} /></td>
-        <td><select data-gf="tipo"${tint(g.tipo)}>${opts(['Adulto', 'Niño'], g.tipo)}</select></td>
-        ${inv.columnas.map(c => `<td>${cell(g, c)}</td>`).join('')}
         <td class="center">${(() => {
           if (!vinculado.has(g.id)) return '<span class="pill">sin asociar</span>';
           const r = respOfGuest.get(g.id);
@@ -333,6 +328,12 @@
           const igual = norm(`${r.nombre} ${r.apellidos}`) === norm(fullName(g));
           return igual ? '<span class="pill ok">✓ asociado</span>' : `<span class="pill warn" title="El cuestionario dice: ${esc(`${r.nombre} ${r.apellidos}`.trim())}">≠ ${esc(`${r.nombre} ${r.apellidos}`.trim())}</span> <button class="mini" data-act="g-usename" data-id="${g.id}" title="Poner el nombre y apellidos del cuestionario">Usar este nombre</button>`;
         })()}</td>
+        <td><select data-gmesa${tint(mm.has(g.id) ? mm.get(g.id).numero : '', mm.has(g.id) ? mm.get(g.id).numero - 1 : -1)}>${mesaOpts(mm.get(g.id))}</select></td>
+        <td><select data-gf="viene"${tint(g.viene)}>${opts(VIENE, g.viene)}</select></td>
+        <td><select data-gf="grupo"${tint(g.grupo, inv.grupos.indexOf(g.grupo))}>${opts(inv.grupos, g.grupo, '—')}</select></td><td><input data-gf="subgrupo" list="dl-sub" value="${esc(g.subgrupo)}"${tint(g.subgrupo)} /></td>
+        <td><select data-gf="tipo"${tint(g.tipo)}>${opts(['Adulto', 'Niño'], g.tipo)}</select></td>
+        ${inv.columnas.map(c => `<td>${cell(g, c)}</td>`).join('')}
+
         <td class="actions-cell"><button class="delete" data-act="g-del" data-id="${g.id}" aria-label="Eliminar">${TRASH}</button></td></tr>`).join('') : `<tr><td class="empty" colspan="${9 + inv.columnas.length}">${list.length ? 'Ningún invitado coincide con el filtro.' : 'Aún no hay invitados. Añádelos, impórtalos desde Excel o asócialos desde el cuestionario.'}</td></tr>`}</tbody></table></div>`;
     if (ssGet('assoc') === '1') renderAssoc();
   }
