@@ -57,6 +57,7 @@
       const limpios = d.grupos.filter(g => usados.has(g) || !ejemplo.includes(g));
       if (limpios.length !== d.grupos.length) { d.grupos = limpios; markDirty(name); }
     }
+    if (name === 'invitados' && fillSino(SEC[name].data)) markDirty(name);
     if (!data) markDirty(name);   // primera vez: guarda los valores de partida
     return SEC[name].data;
   }
@@ -173,12 +174,22 @@
     const color = !v ? '' : el.dataset.gf === 'grupo' ? (FIXED[norm(v)] || PALETTE[Math.max(0, inv.grupos.indexOf(v)) % PALETTE.length]) : (FIXED[norm(v)] || PALETTE[hashIdx(v)]);
     el.style.background = color; if (!color) el.removeAttribute('style');
   }
-  const guestFilter = { q: '', grupo: '', subgrupo: '', viene: '', tipo: '' };
+  const ssGet = k => { try { return sessionStorage.getItem('boda-' + k); } catch { return null; } };
+  const ssSet = (k, v) => { try { sessionStorage.setItem('boda-' + k, v); } catch { /* sin almacenamiento */ } };
+  document.addEventListener('toggle', e => { if (e.target.id === 'assoc-box') ssSet('assoc', e.target.open ? '1' : '0'); }, true);
+  const guestFilter = (() => { try { return { q: '', grupo: '', subgrupo: '', viene: '', tipo: '', ...JSON.parse(ssGet('filtros') || '{}') }; } catch { return { q: '', grupo: '', subgrupo: '', viene: '', tipo: '' }; } })();
+  const saveFilters = () => ssSet('filtros', JSON.stringify(guestFilter));
   const fullName = g => `${g?.nombre || ''} ${g?.apellido || ''}`.trim();
 
+  // Las columnas Sí/No nunca quedan vacías: lo que no tiene valor es «No».
+  function fillSino(inv) {
+    let changed = false;
+    for (const c of inv.columnas) if (c.tipo === 'sino') for (const g of inv.invitados) if (g.extra[c.id] !== 'Sí' && g.extra[c.id] !== 'No') { g.extra[c.id] = 'No'; changed = true; }
+    return changed;
+  }
   function ensureCol(inv, nombre, tipo = 'texto') {
     let c = inv.columnas.find(c => norm(c.nombre) === norm(nombre));
-    if (!c) { c = { id: uid(), nombre, tipo }; inv.columnas.push(c); }
+    if (!c) { c = { id: uid(), nombre, tipo }; inv.columnas.push(c); if (tipo === 'sino') fillSino(inv); }
     return c.id;
   }
   // Vuelca los datos de una persona del cuestionario a la ficha del invitado.
@@ -201,11 +212,12 @@
   function renderInvitados() {
     const inv = SEC.invitados.data, list = inv.invitados;
     const vinculado = new Set(Object.values(inv.vinculos));
+    saveFilters();
     const shown = filteredGuests(), filtering = isFiltering(), stats = guestStatsArr(shown);
     const subgrupos = [...new Set(list.map(g => g.subgrupo).filter(Boolean))].sort((x, y) => x.localeCompare(y, 'es'));
     const cell = (g, c) => {
       const v = g.extra[c.id] ?? '';
-      if (c.tipo === 'sino') return `<select data-gx="${c.id}"${tint(v)}>${opts(['Sí', 'No'], v, '—')}</select>`;
+      if (c.tipo === 'sino') return `<select data-gx="${c.id}"${tint(v || 'No')}>${opts(['Sí', 'No'], v || 'No')}</select>`;
       if (c.tipo === 'lista') return `<select data-gx="${c.id}"${tint(v)}>${opts((c.opciones || '').split(',').map(s => s.trim()).filter(Boolean), v, '—')}</select>`;
       return `<input data-gx="${c.id}" type="${c.tipo === 'numero' ? 'number' : 'text'}" value="${esc(v)}" />`;
     };
@@ -224,7 +236,7 @@
         <button class="secondary" data-act="g-export">Exportar Excel</button>
       </div>
       <div class="filters" id="gfilters">${filtersHtml()}</div>
-      <details class="assoc" ${pend ? 'open' : ''}><summary>Respuestas del cuestionario ${respData ? `· ${pend} sin asociar de ${respData.rows.length}` : ''}</summary><div id="assoc"></div></details>
+      <details class="assoc" id="assoc-box"${ssGet('assoc') === '1' ? ' open' : ''}><summary>Respuestas del cuestionario ${respData ? `· ${pend} sin asociar de ${respData.rows.length}` : ''}</summary><div id="assoc"></div></details>
       <datalist id="dl-sub">${[...new Set(list.map(g => g.subgrupo).filter(Boolean))].sort().map(x => `<option value="${esc(x)}">`).join('')}</datalist><div class="table-wrap tall"><table class="edit"><thead><tr><th>Nombre</th><th>Apellido</th><th>¿Viene?</th><th>Grupo</th><th>Subgrupo</th><th>Tipo</th>${inv.columnas.map(c => `<th>${esc(c.nombre)} <button class="x" data-act="g-delcol" data-id="${c.id}" title="Quitar columna">×</button></th>`).join('')}<th>Cuestionario</th><th></th></tr></thead>
       <tbody>${shown.length ? shown.map(g => `<tr data-id="${g.id}">
         <td><input data-gf="nombre" class="c-nombre" value="${esc(g.nombre)}" /></td><td><input data-gf="apellido" class="c-apellido" value="${esc(g.apellido)}" /></td>
@@ -318,7 +330,7 @@
       inv.invitados.push(g); added++;
       if (g.grupo && !inv.grupos.includes(g.grupo)) inv.grupos.push(g.grupo);
     }
-    markDirty('invitados'); renderInvitados(); alert(`Se han añadido ${added} invitados.${skipped ? ` Se han omitido ${skipped} (ya estaban o es la fila de los novios).` : ''}`);
+    fillSino(inv); markDirty('invitados'); renderInvitados(); alert(`Se han añadido ${added} invitados.${skipped ? ` Se han omitido ${skipped} (ya estaban o es la fila de los novios).` : ''}`);
   }
   async function exportGuests() {
     const X = await getXLSX(), inv = SEC.invitados.data;
@@ -337,7 +349,7 @@
     e.preventDefault(); const f = e.target, nombre = f.nombre.value.trim(); if (!nombre) return;
     const inv = SEC.invitados.data;
     inv.columnas.push({ id: uid(), nombre, tipo: f.tipo.value, ...(f.tipo.value === 'lista' ? { opciones: f.opciones.value } : {}) });
-    markDirty('invitados'); colDialog.close(); f.reset(); renderInvitados();
+    fillSino(inv); markDirty('invitados'); colDialog.close(); f.reset(); renderInvitados();
   };
   $('#dlg-col-form').nombre.addEventListener('input', e => { const s = SUGERIDAS.find(([n]) => n === e.target.value); if (s) e.target.form.tipo.value = s[1]; });
   $('#dlg-col-cancel').onclick = () => colDialog.close();
@@ -352,7 +364,7 @@
 
   async function invitadosClick(act, el) {
     const inv = SEC.invitados.data;
-    if (act === 'g-add') { inv.invitados.push(newGuest()); markDirty('invitados'); renderInvitados(); const rows = document.querySelectorAll('#tab-invitados tbody tr'); rows[rows.length - 1]?.querySelector('input')?.focus(); }
+    if (act === 'g-add') { inv.invitados.push(newGuest()); fillSino(inv); markDirty('invitados'); renderInvitados(); const rows = document.querySelectorAll('#tab-invitados tbody tr'); rows[rows.length - 1]?.querySelector('input')?.focus(); }
     else if (act === 'g-del') { const g = inv.invitados.find(g => g.id === el.dataset.id); if (await ask(`Se eliminará a ${fullName(g) || 'este invitado'}.`)) { inv.invitados = inv.invitados.filter(x => x.id !== g.id); for (const k of Object.keys(inv.vinculos)) if (inv.vinculos[k] === g.id) delete inv.vinculos[k]; markDirty('invitados'); renderInvitados(); } }
     else if (act === 'g-f') { const k = el.dataset.k; guestFilter[k] = guestFilter[k] === el.dataset.v ? '' : el.dataset.v; if (k === 'grupo' && guestFilter.subgrupo && !inv.invitados.some(g => g.grupo === guestFilter.grupo && g.subgrupo === guestFilter.subgrupo) && guestFilter.grupo) guestFilter.subgrupo = ''; renderInvitados(); }
     else if (act === 'g-clear') { Object.assign(guestFilter, { q: '', grupo: '', subgrupo: '', viene: '', tipo: '' }); renderInvitados(); }
@@ -363,14 +375,14 @@
     else if (act === 'a-filter') { assocFilter = el.dataset.v; renderAssoc(); }
     else if (act === 'a-accept') { link(el.dataset.k, el.dataset.g); markDirty('invitados'); renderInvitados(); }
     else if (act === 'a-unlink') { delete inv.vinculos[el.dataset.k]; markDirty('invitados'); renderInvitados(); }
-    else if (act === 'a-create') { const r = respData.rows.find(r => respKey(r) === el.dataset.k), g = newGuest(r.nombre, r.apellidos); inv.invitados.push(g); link(el.dataset.k, g.id); markDirty('invitados'); renderInvitados(); }
+    else if (act === 'a-create') { const r = respData.rows.find(r => respKey(r) === el.dataset.k), g = newGuest(r.nombre, r.apellidos); inv.invitados.push(g); fillSino(inv); link(el.dataset.k, g.id); markDirty('invitados'); renderInvitados(); }
     else if (act === 'a-auto') { for (const r of respData.rows) { if (inv.vinculos[respKey(r)]) continue; const g = suggestGuest(inv, r); if (g) link(respKey(r), g.id); } markDirty('invitados'); renderInvitados(); }
     else if (act === 'a-sync') { for (const [k, gid] of Object.entries(inv.vinculos)) { const r = respData.rows.find(r => respKey(r) === k), g = inv.invitados.find(g => g.id === gid); if (r && g) applyResponse(inv, g, r); } markDirty('invitados'); renderInvitados(); }
     else if (act === 'a-reload') { await loadRespuestas(); renderInvitados(); }
   }
   function invitadosInput(el, isChange) {
     const inv = SEC.invitados.data;
-    if (el.id === 'g-q') { guestFilter.q = el.value; if (isChange) return; const pos = el.selectionStart; renderInvitados(); const n = $('#g-q'); n.focus(); n.setSelectionRange(pos, pos); return; }
+    if (el.id === 'g-q') { guestFilter.q = el.value; saveFilters(); if (isChange) return; const pos = el.selectionStart; renderInvitados(); const n = $('#g-q'); n.focus(); n.setSelectionRange(pos, pos); return; }
     if (el.id === 'g-grupo') { guestFilter.grupo = el.value; return renderInvitados(); }
     if (el.id === 'g-viene') { guestFilter.viene = el.value; return renderInvitados(); }
     if (el.id === 'g-subgrupo') { guestFilter.subgrupo = el.value; return renderInvitados(); }
@@ -609,6 +621,7 @@
     tareas: { need: ['tareas'], render: renderTareas }
   };
   let current = 'respuestas';
+  let firstRender = true;
   async function render() {
     const tab = TABS[current];
     document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === current));
@@ -620,10 +633,13 @@
       if ((current === 'respuestas' || tab.resp) && !respData) await loadRespuestas().catch(() => { respData = null; });
       if (current === 'respuestas' && !respData) await loadRespuestas();
       tab.render();
+      if (firstRender) { firstRender = false; const y = Number(ssGet('scroll-' + current)); if (y) window.scrollTo(0, y); }
     } catch (e) { if (e.message !== '401') { $('#tab-' + current).innerHTML = `<p class="error">${esc(e.message || 'Error')}</p>`; } }
     loginView.hidden = true; panelView.hidden = false;
   }
   document.querySelector('.tabs').addEventListener('click', e => { const b = e.target.closest('button[data-tab]'); if (!b) return; current = b.dataset.tab; history.replaceState(null, '', '#' + current); render(); });
+
+  let scrollTimer; window.addEventListener('scroll', () => { clearTimeout(scrollTimer); scrollTimer = setTimeout(() => ssSet('scroll-' + current, window.scrollY), 200); }, { passive: true });
 
   /* ---------- eventos delegados ---------- */
   const handlers = { invitados: invitadosClick, mesas: mesasEvent, presupuesto: presupuestoEvent, proveedores: proveedoresEvent, tareas: tareasEvent };
