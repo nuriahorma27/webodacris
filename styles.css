@@ -396,3 +396,5 @@ html,body{max-width:100%;overflow-x:hidden}
 .iban-number a{color:inherit!important;text-decoration:none!important;pointer-events:none}
 
 .countdown{display:flex;justify-content:center;gap:clamp(18px,4vw,46px);margin:clamp(26px,5vh,44px) 0 0;padding:0 clamp(16px,6vw,60px)}.countdown div{min-width:clamp(52px,9vw,84px);text-align:center}.countdown b{display:block;color:var(--green);font:400 clamp(36px,6vw,62px)/1 "Cormorant Garamond",serif;font-variant-numeric:tabular-nums}.countdown span{display:block;margin-top:6px;color:var(--olive);font:500 8px "DM Sans",sans-serif;letter-spacing:.2em;text-transform:uppercase}.countdown.done b{font-size:0}.countdown.done:before{content:"¡Hoy es el gran día!";color:var(--green);font:italic 400 clamp(28px,5vw,44px) "Cormorant Garamond",serif}.countdown.done div{display:none}
+/* La portada ocupa siempre toda la pantalla (incluso con la barra del navegador oculta), para que la iglesia no asome al abrir la web. */
+.hero{min-height:100vh;min-height:100lvh;padding-bottom:max(50px,6vh)}
