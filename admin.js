@@ -44,9 +44,21 @@
   const newPartida = (categoria, concepto) => ({ id: uid(), categoria, concepto, proveedor: '', estimado: 0, pagado: 0, ...(D.MENU_CONCEPTOS.includes(concepto) ? { tipo: 'menu', precioUnidad: 0, cantidad: 0 } : {}) });
   const initialPartidas = () => CATS_INICIALES.flatMap(c => (D.CATEGORIAS_ESTANDAR[c] || []).map(x => newPartida(c, x)));
 
-  async function loadSec(name, force) {
-    if (SEC[name] && !force) return SEC[name].data;
-    const res = await fetch(`/api/gestion/${name}`, { headers: headers() });
+  // fetch con límite de tiempo: si el servidor tarda demasiado, se avisa en vez de quedarse colgado.
+  async function fetchT(url, opts = {}, ms = 30000) {
+    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), ms);
+    try { return await fetch(url, { ...opts, signal: ctl.signal }); }
+    catch (e) { throw new Error(e.name === 'AbortError' ? 'El servidor tarda demasiado en responder.' : 'Sin conexión con el servidor.'); }
+    finally { clearTimeout(t); }
+  }
+  const PENDING = {};
+  function loadSec(name, force) {
+    if (SEC[name] && !force) return Promise.resolve(SEC[name].data);
+    if (PENDING[name]) return PENDING[name];
+    return (PENDING[name] = loadSecNow(name).finally(() => { delete PENDING[name]; }));
+  }
+  async function loadSecNow(name) {
+    const res = await fetchT(`/api/gestion/${name}`, { headers: headers() });
     if (res.status === 401) { unauthorized(); throw new Error('401'); }
     if (!res.ok) throw new Error('No se ha podido cargar.');
     const { rev, data } = await res.json();
@@ -102,7 +114,7 @@
     if (s.saving) { s.again = true; return; }
     s.saving = true;
     try {
-      const res = await fetch(`/api/gestion/${name}`, { method: 'PUT', headers: headers(), body: JSON.stringify({ data: s.data, rev: s.rev }) });
+      const res = await fetchT(`/api/gestion/${name}`, { method: 'PUT', headers: headers(), body: JSON.stringify({ data: s.data, rev: s.rev }) });
       if (res.status === 401) return unauthorized();
       if (res.status === 409) { setSave('Otra persona ha guardado cambios: recarga la página para verlos.', true); return; }
       if (!res.ok) { setSave('No se ha podido guardar. Reintentando…', true); s.timer = setTimeout(() => flush(name), 4000); return; }
@@ -115,7 +127,7 @@
   /* ---------- respuestas del cuestionario ---------- */
   let respData = null;       // { columns, rows, summary }
   async function loadRespuestas() {
-    const res = await fetch('/api/respuestas', { headers: headers() });
+    const res = await fetchT('/api/respuestas', { headers: headers() });
     if (res.status === 401) { unauthorized(); throw new Error('401'); }
     if (!res.ok) throw new Error('No se han podido cargar las respuestas.');
     respData = await res.json();
@@ -198,15 +210,16 @@
     const row = (label, html) => html ? `<div class="frow"><span class="flabel">${label}</span><div class="fchips">${html}</div></div>` : '';
     const v = facet('viene'), t = facet('tipo'), g = facet('grupo'), sg = facet('subgrupo');
     const allG = [...new Set(inv.invitados.map(x => x.grupo).filter(Boolean))];
-    const simple = (k, label, pref) => { const f = facet(k); return row(label, ordered(f, pref).map(x => chip(k, x, f.get(x), FIXED[norm(x)] || PALETTE[hashIdx(x)])).join('')); };
+    // Las opciones del autobús se muestran siempre (aunque ahora no haya nadie), para que se vea que el filtro existe.
+    const simple = (k, label, pref) => { const f = facet(k); for (const x of pref) if (!f.has(x)) f.set(x, 0); return row(label, ordered(f, pref).map(x => chip(k, x, f.get(x), FIXED[norm(x)] || PALETTE[hashIdx(x)])).join('')); };
     const mesas = SEC.mesas?.data.mesas || [], mf = facet('mesa');
     const mesaChips = [...mf.keys()].sort((x, y) => (x === 'sin') - (y === 'sin') || Number(x) - Number(y)).map(x => { const t = mesas.find(m => String(m.numero) === x); return chip('mesa', x, mf.get(x), x === 'sin' ? '#efe6d2' : PALETTE[hashIdx(x)], x === 'sin' ? 'Sin mesa' : t ? mesaLabel(t) : `Mesa ${x}`); }).join('');
     return row('¿Viene?', ordered(v, ['Sí', 'Pendiente', 'No']).map(x => chip('viene', x, v.get(x), FIXED[norm(x)])).join(''))
       + row('Tipo', ordered(t, ['Adulto', 'Niño']).map(x => chip('tipo', x, t.get(x), FIXED[norm(x)])).join(''))
       + row('Grupo', ordered(g, allG).map(x => chip('grupo', x, g.get(x), PALETTE[Math.max(0, inv.grupos.indexOf(x)) % PALETTE.length])).join(''))
       + row('Subgrupo', ordered(sg, []).map(x => chip('subgrupo', x, sg.get(x), PALETTE[hashIdx(x)])).join(''))
-      + simple('bi', 'Bus ida', ['Sí', 'No']) + simple('bid', 'Ida desde', ['Gijón', 'Oviedo'])
-      + simple('bv', 'Bus vuelta', ['Sí', 'No']) + simple('bva', 'Vuelta a', ['Gijón', 'Oviedo'])
+      + simple('bi', 'Bus de ida', ['Sí', 'No']) + simple('bid', 'Ida desde', ['Gijón', 'Oviedo'])
+      + simple('bv', 'Bus de vuelta', ['Sí', 'No']) + simple('bva', 'Vuelta a', ['Gijón', 'Oviedo'])
       + row('Mesa', mesaChips);
   }
   function guestStatsArr(shown) {
@@ -347,6 +360,9 @@
     if (!r || !g) return;
     for (const key of Object.keys(inv.vinculos)) if (inv.vinculos[key] === gid) delete inv.vinculos[key];
     inv.vinculos[k] = gid; applyResponse(inv, g, r);
+    // El nombre y los apellidos pasan a ser los que escribió la persona en el cuestionario.
+    if (r.nombre) g.nombre = r.nombre;
+    if (r.apellidos) g.apellido = r.apellidos;
   }
 
   // Nombres compuestos habituales: "María José Pérez" -> nombre "María José".
@@ -839,21 +855,32 @@
   let current = 'respuestas';
   let firstRender = true;
   async function render() {
-    const tab = TABS[current];
+    const tab = TABS[current], mine = current, tabEl = $('#tab-' + current);
     document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === current));
     document.querySelectorAll('.tab').forEach(s => s.hidden = s.id !== (current === 'respuestas' ? 'tab-respuestas' : 'tab-' + current));
     $('#actions-resp').hidden = current !== 'respuestas';
     updateUndoButtons();
-    try {
-      if (current !== 'respuestas') { const tabEl = $('#tab-' + current); if (!tabEl.innerHTML.trim()) tabEl.innerHTML = '<p class="muted">Cargando…</p>'; }
-      await Promise.all(tab.need.map(n => loadSec(n)));
-      if ((current === 'respuestas' || tab.resp) && !respData) await loadRespuestas().catch(() => { respData = null; });
-      if (current === 'respuestas' && !respData) await loadRespuestas();
-      tab.render();
-      if (firstRender) { firstRender = false; const y = Number(ssGet('scroll-' + current)); if (y) window.scrollTo(0, y); }
-    } catch (e) { if (e.message !== '401') { $('#tab-' + current).innerHTML = `<p class="error">${esc(e.message || 'Error')}</p>`; } }
     loginView.hidden = true; panelView.hidden = false;
+    try {
+      const faltan = tab.need.filter(n => !SEC[n]);
+      if (faltan.length || (current === 'respuestas' && !respData)) {
+        if (mine !== 'respuestas' && !tabEl.querySelector('.stats, table')) tabEl.innerHTML = '<p class="muted loading">Cargando…</p>';
+        setSave('Cargando…');
+      }
+      await Promise.all(tab.need.map(n => loadSec(n)));
+      if (current === 'respuestas' && !respData) await loadRespuestas();
+      if (current !== mine) return;                       // se cambió de pestaña mientras cargaba
+      tab.render();
+      if (saveState.textContent === 'Cargando…') setSave('');
+      if (tab.resp && !respData) loadRespuestas().then(() => { if (current === mine) tab.render(); }).catch(() => {});   // las respuestas llegan después, sin bloquear
+      if (firstRender) { firstRender = false; const y = Number(ssGet('scroll-' + current)); if (y) window.scrollTo(0, y); }
+    } catch (e) {
+      if (e.message === '401') return;
+      setSave('');
+      if (current === mine) tabEl.innerHTML = `<p class="error">${esc(e.message || 'Error')}</p><p class="center"><button class="secondary" id="retry-load" type="button" style="width:auto">Reintentar</button></p>`;
+    }
   }
+  document.addEventListener('click', e => { if (e.target.id === 'retry-load') render(); });
   document.querySelector('.tabs').addEventListener('click', e => { const b = e.target.closest('button[data-tab]'); if (!b) return; current = b.dataset.tab; history.replaceState(null, '', '#' + current); render(); });
 
   let scrollTimer; window.addEventListener('scroll', () => { clearTimeout(scrollTimer); scrollTimer = setTimeout(() => ssSet('scroll-' + current, window.scrollY), 200); }, { passive: true });
@@ -887,12 +914,13 @@
 
   /* ---------- sesión ---------- */
   async function start() {
-    const res = await fetch('/api/respuestas', { headers: headers() });
-    if (res.status === 401) return unauthorized();
-    if (!res.ok) return showLogin('No se han podido cargar los datos. Inténtalo más tarde.');
-    respData = await res.json();
+    // Se comprueba el acceso con la sección de invitados (que hace falta de todos modos); las respuestas se cargan después.
+    try { await loadSec('invitados'); } catch (e) { return e.message === '401' ? undefined : showLogin(e.message || 'No se han podido cargar los datos. Inténtalo más tarde.'); }
     const h = location.hash.slice(1); if (TABS[h]) current = h;
-    render();
+    await render();
+    if (!respData) loadRespuestas().then(() => { if (TABS[current].resp || current === 'respuestas') TABS[current].render(); }).catch(() => {});
+    // El resto de secciones se descargan ya, en segundo plano, para que al cambiar de pestaña salgan al instante.
+    ['mesas', 'tareas', 'presupuesto', 'proveedores'].forEach(n => loadSec(n).catch(() => {}));
   }
   $('#login-form').addEventListener('submit', async event => {
     event.preventDefault(); const form = event.target, b = form.querySelector('button');
